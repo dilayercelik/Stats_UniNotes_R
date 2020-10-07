@@ -1,0 +1,172 @@
+---
+title: "hello"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Step 1 - Set-Up
+```{r}
+install.packages('tidyverse')
+```
+
+```{r}
+install.packages('broom')
+```
+
+```{r}
+library('tidyverse')
+library('broom')
+```
+
+```{r}
+ratings = read.csv('voice_ratings.csv')
+
+acoustics = read.csv('voice_acoustics.csv')
+```
+
+
+Step 2 - Data Wrangling
+```{r}
+ratings_tidy <- ratings %>% gather(participant, rating, P1:P28)
+```
+
+```{r}
+ratings_mean <- ratings_tidy %>% group_by(VoiceID) %>% summarise(mean_ratings=mean(rating))
+```
+
+```{r}
+joined <- inner_join(ratings_mean, acoustics, by='VoiceID')
+```
+
+```{r}
+joined_wide <- spread(joined, 'measures', 'value')
+```
+
+Best Practice:
+```{r}
+rm(acoustics, joined, ratings, ratings_mean, ratings_tidy)
+```
+
+
+Step 3 - Descriptive Statistics
+```{r}
+summary_table <- joined_wide %>% group_by(sex) %>% summarise(num_voices=n(), mean_trust_rating=mean(mean_ratings), sd_trust_rating=sd(mean_ratings), se_trust_rating=sd_trust_rating / sqrt(num_voices), CI_95_trust_rating_low=mean_trust_rating - (1.96 * se_trust_rating), CI_95_trust_rating_upper=mean_trust_rating + (1.96 * se_trust_rating))
+                                                             
+```
+
+Step 4 - Data Visualisation
+```{r}
+ggplot(joined_wide, aes(x=mean_ratings)) +
+  geom_histogram()+
+  theme_bw()
+```
+
+Scatter Plot
+```{r}
+ggplot(joined_wide, aes(x=Pitch, y=mean_ratings)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  facet_wrap(~sex) +
+  labs(title='Relationship between Pich and Trustworthiness (by sex)')
+```
+
+
+Box Plot
+```{r}
+ggplot(joined_wide, aes(x=sex, y=Dispersion)) +
+  geom_violin() +
+  geom_boxplot(width=0.1)
+```
+
+Step 5 - Inferential Statistics: t-test
+```{r}
+var.test(joined_wide %>% filter(sex=='M') %>% pull(mean_ratings), 
+         joined_wide %>% filter(sex=='F') %>% pull(mean_ratings))
+```
+p > 0.05 so our p-value is not significant and therefore we cannot reject the null hypothesis that variances are equal.
+From now on, we consider variances equal.
+
+```{r}
+trust_mean_rating_t <- t.test(joined_wide %>% filter(sex=='M') %>% pull(mean_ratings), joined_wide %>% filter(sex=='F') %>% pull(mean_ratings), var.equal=TRUE) %>%
+  
+  tidy()
+```
+The t-statistic is approximately equal to -1.31, while the p-value is approximately equal to 0.195. 
+p > 0.05, so we did not obtain a signficant result.
+t(62) = -1.31, p =0 .195.
+
+
+Step 6 - Inferential Statistics: correlation
+
+
+A) Assumptions for Pearson's Correlation
+
+1/ trustworthiness rating (`mean_ratings`) is interval and pitch is ratio data.
+
+2/ we have datapoints for both variables.
+
+3/ trustworthiness seems to be normally distributed (histogram created earlier).
+
+4/ pitch also seems to be normally distributed:
+```{r}
+ggplot(joined_wide, aes(x=Pitch)) +
+  geom_histogram(bins=30)+
+  theme_bw()
+```
+
+5/ there seems to be a linear relationship between trustworthiness rating (`mean_ratings`) and pitch:
+```{r}
+ggplot(joined_wide, aes(x=Pitch, y=mean_ratings)) + 
+  geom_point() +
+  theme_bw()
+```
+
+6/ homoscedasicity
+
+Definition (Practical 13 in Year 1): it is that the spread of datapoints around the (imaginary) line of best fit is even on both sides along the line; as opposed to very narrow at one point and very wide at others. 
+
+Yes.
+
+
+B) Running Correlation: separately for each sex
+
+# Correlation for Males' Pitch
+```{r}
+cor_male_results <- cor.test(joined_wide %>% filter(sex=='M') %>% pull(Pitch), joined_wide %>% filter(sex=='F') %>% pull(mean_ratings)) %>%
+  
+  tidy()
+```
+
+Testing the hypothesis that there would be a relationship between trustworthiness rating (mean_ratings) and pitch in men, a pearson correlation found a significant relationship between the mean ratings of trustworthiness for voices and male pitches, r(30) = -3.081, p = 0.004. 
+
+
+# Correlation for Females' Pitch
+```{r}
+cor_female_results <- cor.test(joined_wide %>% filter(sex=='F') %>% pull(Pitch), joined_wide %>% filter(sex=='F') %>% pull(mean_ratings)) %>%
+  
+  tidy()
+```
+
+Testing the hypothesis that there would be a relationship between trustworthiness rating (mean_ratings) and pitch in women, a pearson correlation found NO significant relationship between the mean ratings of trustworthiness for voices and female pitches, r(30) = -0.150, p = 0.881. 
+
+
+Clean-Up 
+```{r}
+rm(cor_results)
+```
+
+
+
+
+
+
+
+
+
+
+
