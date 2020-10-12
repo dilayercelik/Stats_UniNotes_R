@@ -1,0 +1,77 @@
+---
+title: "Homework: Week 2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Complete each code chunk below by deleting #ADDCODE and entering the correct code. Run each code chunk to check that it is working before you submit. 
+
+There is an optional 10th question for those of you that want a challenge. Give this a go but don't worry if you can't work it out- we will go through the answer at the start of next week. 
+
+Remember to set the working directory to where the happiness data files are stored before you start.
+
+Question 1: load the tidyverse package
+```{r}
+#load tidyverse
+install.packages("tidyverse")
+ 
+```
+
+Question 2: Use read.scv to load in the participant info and questionnaire response datasets and call them 'pinfo' and 'responses'
+```{r}
+#load participant info and questionnaire responses 
+pinfo<-read.csv("participant-info.csv")
+responses<-read.csv("ahi-cesd.csv")
+```
+
+Question 3: Join the participant info and responses data together using inner_join
+```{r}
+#join the pinfo and responses
+all_data<-inner_join(responses,pinfo,by= c('id','intervention'))
+```
+
+Question 4: Create new dataframe with just id, age, ahiTotal, cesdTotal, educ and occasion variables using select()
+```{r}
+#select id, age, ahiTotal, cesdTotal, educ and occasion variables
+selected_vars <- select(all_data, id, age, ahiTotal, cesdTotal, educ, occasion)
+```
+
+Question 5: Create new dataframe called 'pre' with only observations from pre intervention test (e.g. occasion 1) using filter()
+```{r}
+#occasion 1 data only 
+pre <- filter(selected_vars, occasion == 1)
+```
+
+Question 6: Create new age_asc dataframe containing rows from pre dataframe arranged by age with lowest age first.
+```{r}
+#arrange by age
+age_asc<-arrange(pre, by= age)
+```
+
+Question 7: Use sumarise() to create a new object called ahimedian, which contains the median ahiTotal score.HINT: the code median() calculates the median and works in the same way as mean()
+```{r}
+#Calculate median ahiTotal score.
+medianAHI<-summarise(pre, ahimedian=mean(ahiTotal))
+```
+
+Question 8: Create a new data frame called pre_edu containing pre data grouped by the education level variable
+```{r}
+#Group by education level
+pre_edu <- group_by(pre, educ)
+```
+
+Question 9: Use summarise to create a new object called pre_edu_median containing median ahi for each education level
+```{r}
+#calculate median ahiTotal for each education level
+pre_edu_median <- summarise(pre_edu, medianAHI)
+```
+
+Optional challenge: Try using mutate(), if_else() and mean() to create a new variable called happiness_split that codes whether each participant has 'above' or 'below' average levels of happiness (ahiTotal). HINT: you will need the logical operator for greater than ```>```. 
+
+```{r}
+#create happiness split variable
+pre<-mutate(pre, happiness_split = if_else(ahiTotal>mean(ahiTotal), "above","below"))
+```
