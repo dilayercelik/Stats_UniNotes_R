@@ -36,16 +36,16 @@ Chapters: 1, 2, 5, 9, 10, 11, 12, 13, 15
 
 # Other online/general resources
 
-> Codecademy
+Codecademy
   - [Learn R course](https://www.codecademy.com/catalog/language/r)
   
-> 101 Statistics Videos
+101 Statistics Videos
   - YouTube Playlists by [Brandon Foltz](https://www.youtube.com/user/BCFoltz/playlists)
   
 
 # Author of the Repo
 
-> Dilay F Ercelik
+- Dilay Fidan Ercelik
 
-Contact [here](https://www.linkedin.com/in/dilay-fidan-ercelik-682675194/)
+Contact [here](https://www.linkedin.com/in/dilay-fidan-ercelik-682675194/).
   
