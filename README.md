@@ -7,7 +7,7 @@ GitHub Repo containing my notes and work in the following statistics modules (us
 These stats modules consist of weekly lectures (1 hour), weekly practical class sessions (2 hours) and weekly homeworks (1-2 hours).
 
 
-*PS: there were no practicals and no homeworks on Weeks 1 and 5 of Introduction to Research Methods (Year 1).
+*PS: there were no practicals and no homeworks on Weeks 1 and 5 of Introduction to Research Methods (Year 1).*
 
 
 # Core Texts
