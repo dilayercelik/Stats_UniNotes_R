@@ -54,7 +54,7 @@ age_asc<-arrange(pre, by= age)
 Question 7: Use sumarise() to create a new object called ahimedian, which contains the median ahiTotal score.HINT: the code median() calculates the median and works in the same way as mean()
 ```{r}
 #Calculate median ahiTotal score.
-medianAHI<-summarise(pre, ahimedian=mean(ahiTotal))
+medianAHI<-summarise(pre, ahimedian=median(ahiTotal))
 ```
 
 Question 8: Create a new data frame called pre_edu containing pre data grouped by the education level variable
@@ -66,7 +66,7 @@ pre_edu <- group_by(pre, educ)
 Question 9: Use summarise to create a new object called pre_edu_median containing median ahi for each education level
 ```{r}
 #calculate median ahiTotal for each education level
-pre_edu_median <- summarise(pre_edu, medianAHI)
+pre_edu_median <- summarise(pre_edu, medianAhi=median(ahiTotal))
 ```
 
 Optional challenge: Try using mutate(), if_else() and mean() to create a new variable called happiness_split that codes whether each participant has 'above' or 'below' average levels of happiness (ahiTotal). HINT: you will need the logical operator for greater than ```>```. 
