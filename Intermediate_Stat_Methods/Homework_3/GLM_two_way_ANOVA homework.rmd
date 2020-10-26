@@ -1,0 +1,170 @@
+---
+title: "GLM two way ANOVA homework"
+author: "Sarah"
+date: "22 July 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This excercise is an edited version of a worksheet on the Open Stats Lab: websitehttps://sites.trinity.edu/osl/data-sets-and-activities/factorial-anova-activities
+
+Your homework this week is to recreate the results from study 1 of Maglio and Polman (2016): https://journals.sagepub.com/stoken/default+domain/hv65WpzIjfXtVjXCbJw6/full 
+
+# Task 1: Understanding the design
+
+Read the methods and results for study 1 in the paper and answer the following questions;
+
+a) What is the dependent variable in this experiment?
+
+ANSWER: (subjective) distance rating  
+(Participants were asked, “How far away does the [name] station feel
+to you?” and rated the distance using a scale from 1 (very
+close) to 7 (very far))
+
+b) What are the factors in this experiment? 
+
+ANSWER: Factor 1 = platform direction/orientation | Factor 2 = station 
+
+c) How many levels does each factor have?
+
+ANSWER: Factor 1 has 2 levels, factor 2 has 4 levels.
+Factor 1 levels = WESTbound platform or EASTbound platform
+Factor 2 levels =  Spadina station (two stops to the west, station=1), the St. George station (one stop to the west, station=2), the Bloor-Yonge station (one stop to the east, station=3), or the Sherbourne station (two stops to the east, station=4)
+
+d) How many cells are there?
+
+ANSWER: There are 2x4cells, i.e. 8 cells.
+
+e) Is this a between subjects of within subjects design? 
+
+ANSWER: This is a between-subjects two-factors ANOVA
+
+
+# Task 2: Set up 
+
+Load the tidyverse and ez packages
+
+```{r}
+library(tidyverse)
+
+library(ez)
+```
+
+Download the csv "Maglio&PolmanExp1.csv" from Moodle and save it in the same folder as this script
+
+Run the code below to read in the data:
+
+```{r}
+dat <- read.csv("data/MaglioPolmanExp1.csv") 
+```
+
+
+# Task 3: Calculate cell means 
+
+Calculate the mean, standard deviation and standard error of distance rating for each cell
+
+```{r}
+summary_table <- dat %>% group_by(direction, station) %>% summarise(mean_rating=mean(subjective_distance), 
+                                                                        sd_rating=sd(subjective_distance), 
+                                                                        se_rating=sd_rating/sqrt(n()))
+
+```
+
+# Task 4: Plot the data 
+
+Plot the cell means with error bars showing standard error to recreate Figure 1 in the paper. 
+
+Add additional layers to do the following; 
+- Change line colours to black and grey as in Figure 1
+- Select a theme that matched Figure 1
+- Change the x and y labels
+- Replace the numbers on the y axis with the names of the stations
+
+```{r}
+ggplot(summary_table, aes(x=as.factor(station), y=mean_rating, group=direction, colour=direction)) +
+  geom_line(stat = 'identity') +
+  geom_errorbar(aes(ymin = mean_rating - 1 * se_rating, ymax = mean_rating + 1 * se_rating, colour=direction), width=0.1) +
+  labs(title='Fig. 1. Results from Study 1', x='<---------- West of Bay ----------- Bay ---------- East of Bay ---------->', y='Subjective Distance') +
+  scale_y_continuous(breaks=seq(0,5,0.5)) +
+  scale_x_discrete(labels=c("Spadina", "St. George", "Bloor-Yonge", "Sherbourne")) +
+  theme(axis.text.x = element_text(face = 'italic')) +
+  scale_color_manual(labels = c('Traveling East', 'Traveling West'), values = c('grey', 'black')) +
+  theme_classic()
+
+```
+
+# Task 5: Run the ANOVA using ezANOVA()
+
+HINT: Before you run the ANOVA you need to convert the "station" and "orientation" variables into factors using as.factor(). 
+
+```{r}
+dat$station = as.factor(dat$station)
+dat$orientation = as.factor(dat$orientation)
+
+ezANOVA(dat=dat,
+        dv=subjective_distance,
+        wid=ID,
+        between=c(orientation, station),
+        detailed = TRUE, 
+        type=3)
+
+```
+
+You might notice that your results (specifically for the main effect of station) are slightly different to that reported in the paper. This is because there are different ways of calculating sums of squares when there are different numbers of people in each cell. The default in R is "type 2" sum of squares, whereas in SPSS, which was used by the author of this paper, the default is "type 3". If you add the argument "type=3" to your ezANOVA function you will replicate the result exactly. 
+
+# Task 6: Run the post-hoc tests 
+
+We now want to compare the subjective rating of distance between those going towards and those going away from each station separately. To do this you need to run 4 seperate t-tests. First create 4 separate dataframes containing data for each station only. THen run the appropriate t-test to compare distance ratings of those going east to those going west.
+
+```{r}
+# creating the 4 dataframes
+
+dat_station1 <- dat %>% filter(station==1)
+
+dat_station2 <- dat %>% filter(station==2)
+  
+dat_station3 <- dat %>% filter(station==3)
+
+dat_station4 <- dat %>% filter(station==4)
+
+```
+
+```{r}
+# two-samples t-test (station 1)
+t.test(dat_station1 %>% filter(orientation==1) %>% pull(subjective_distance),
+       dat_station1 %>% filter(orientation==2) %>% pull(subjective_distance),
+       var.equal = TRUE)  # to get same results as the paper (assumes homogeneity of variance)
+
+```
+
+```{r}
+# two-samples t-test (station 2)
+t.test(dat_station2 %>% filter(orientation==1) %>% pull(subjective_distance),
+       dat_station2 %>% filter(orientation==2) %>% pull(subjective_distance),
+       var.equal = TRUE)  # to get same results as the paper (assumes homogeneity of variance)
+
+```
+
+```{r}
+# two-samples t-test (station 3)
+t.test(dat_station3 %>% filter(orientation==1) %>% pull(subjective_distance),
+       dat_station3 %>% filter(orientation==2) %>% pull(subjective_distance),
+       var.equal = TRUE)   # to get same results as the paper (assumes homogeneity of variance)
+
+```
+
+```{r}
+# two-samples t-test (station 4)
+t.test(dat_station4 %>% filter(orientation==1) %>% pull(subjective_distance),
+       dat_station4 %>% filter(orientation==2) %>% pull(subjective_distance),
+       var.equal = TRUE)  # to get same results as the paper (assumes homogeneity of variance)
+
+```
+
+
+Again you may notice some slight differences between your results and the paper. You might remember from last year that there are two types of independent samples t-test; Students t-test and Welches t-test. Students t-test assumes homogeneity of variance whereas Welches t-test is valid even when this assumption is violated. R runs Welches t-test as a default as this test is robust to deviations from homogeneity of variance and gives very similar (but not identical) results when the homogeniety of variance assumption is met. The paper reports results of students t-test and unless you added "var.equal=TRUE", you ran a Welches t-test. If you add the argument var.equal=TRUE to your t-test you will get the same result as in the paper.
+
+
