@@ -1,0 +1,147 @@
+---
+title: "Multiple Linear Regression Homework"
+author: "Sarah"
+date: "29 July 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# loading tidyverse library
+library(tidyverse)
+```
+
+In this homework you are going to be running a multiple regression with some different variables. The data set for this homework contains the distance, climb and average finishing times for men and women on 94 different Scottish hill races. Your task is to run a multiple regression model to predict average female finishing time based on the hilliness (climb) and distance of a race. 
+
+Download the data from moodle and then run the following code chunk to read in data: 
+
+```{r}
+# load the data
+times <- read.csv("data/scottish-hill-races.csv")
+```
+
+
+1a. Create a graph to show the distribution of women's mean finish times.
+
+```{r}
+# data visualisation 
+ggplot(times, aes(x=Womens.Time..min.)) +
+  geom_histogram() +
+  labs(title="Distribution of women's mean finishing time (min)", x='Women Mean Finishing Time (min)') +
+  theme_bw()
+```
+
+1b. How would you describe this distribution? 
+
+# From the histogram plotted above, we can say that the distribution is positively skewed (most values land on the left side of the distribution).
+
+2a. Create a scatter plot showing the relationship between race distance and mean women's finish time.
+
+```{r}
+# data visualisation
+ggplot(times, aes(x=Distance.km., y=Womens.Time..min.)) +
+  geom_point() +
+  geom_smooth() +
+  labs(title='Relationship between Race Distance (y) and Women Mean Finishing Time (x)', y='Women Mean Finishing Time (min)', x='Race Distance (km)') +
+  theme_bw()
+```
+
+2b. How would you describe the relationship? 
+
+# There seems to be a positive linear relationship between women's mean finishing times and the race distance. This relationship seems quite strong (but cannot confidently say much with data visualisation only, at this point).
+
+3a. Run a simple linear regression predicting women's finish time from distance  
+
+```{r}
+# simple linear regression model: IV = Race Distance, DV = Women Mean Finishing Time
+
+mod_wft_dist <- lm(Womens.Time..min. ~ Distance.km., dat=times)
+summary(mod_wft_dist)
+```
+
+3b. How much of the variance of finish times is explained by the race's distance? 
+
+# Around 90% (very high) of the variance in women finish times is explained by the race's distance alone. Here, since the model is a SIMPLE linear regression model (i.e. with 1 IV), we can look either at the multiple R-squared measure or the Adjusted R-squared measure to report the amount of variance accounted by the IV as they are almost identical; later, when using multiple regression models with mutliple IVs, it is preferred to use the Adjusted R-squared over the Multiple R-squared measure, as the former penalises models with lots of IVs.
+
+3c. How much does the mean finish time increase with each additional km?
+
+# With each additional km (i.e. for each +1 for Race Distance), the mean finish time of women increases by 6.77 approx (value we look at here: 6.7721, which is the slope b associated with the IV 'Distance.km.' that can be seen in the output of mod_wft_dist)
+
+4a. We now want to add "hilliness" to our model but first we need to check for collinearity between our two predictors. Run a correlation between climb and distance.
+
+```{r}
+# running correlation test between hilliness and race distance (our potential 2 IVs)
+cor_IVs <- cor.test(times %>% pull(Distance.km.), 
+                    times %>% pull(Climb..m.)) %>%
+  
+  tidy()
+```
+
+4b. Are you concerned about collinearity? 
+
+# Testing the hypothesis that there would be a relationship between 'hilliness' and race distance, a pearson correlation found a significant relationship between the hilliness and distance values, r(92) = 0.785, p<.05
+# This demonstrates that the assumption of no multicollinearity (between the 2 IVs, pitch and dispersion) is unsatisfied, which is one source of concern for our further statistical tests with regards to interpreting and testing significance of the coefficients of the 2 IVs (b1 and b2 slopes)
+
+4c. Climb is confounded with length of the race because the longer the race the more opportunity there is for climbing. One thing we can do to get around this is to calculate climb per km rather than using total climb across the whole race. Add a new climb per km variable to the times data frame called climbperkm. 
+
+```{r}
+# adding new variable to times
+times <- times %>% mutate(climbperkm=Climb..m./Distance.km.)
+
+```
+
+4d. Check the correlation between distance and your new climbperkm variable. Have you solved the problem?
+
+```{r}
+# running correlation test between new climbperkm variable and race distance (our potential 2 IVs)
+cor_new_IVs <- cor.test(times %>% pull(Distance.km.), 
+                        times %>% pull(climbperkm)) %>%
+  
+  tidy()
+
+```
+
+
+5a. Run a multiple regression predicting women's finish time from distance and climb per km
+
+```{r}
+# running multiple regression model (distance + climb/km as IVs)
+mod_wft_distclimb <- lm(Womens.Time..min. ~ Distance.km. + climbperkm, dat=times)
+summary(mod_wft_distclimb)
+
+```
+
+5b. How much of the variance in finish times is explained by the race's distance and climb per km? 
+
+# (Looking at Adjusted R-squared here because we have multiple IVs, although for simply 2 IVs in our model, Multiple and Adjusted R-squared measures are similar)
+# From the output above, we can see that approximately 93% (quite high) of the variance in women's finish times is explained by the race's distance and the climb per km variable, adjusted r2 = 0.9308
+
+5c. Is the model with climb per km added better than the model with distance only and why?
+
+# In our multiple linear regression model, we found significant linear relationships between the DV and both IVs, separately: for the race distance, t(92) = 34.59, p<.05 and for the climb per km variable, t(92) = 6.73, p<.05. Additionally, the variance in women finish times accounted by both IVs is greater than the variance accounted by the race distance IV alone, and this is true when looking at either the Multiple or Adjusted R-squared measures: taking the example of Adjusted R-squared (better to look at this one here, as it penalises models with multiple IVs), it increased from 0.8959 to 0.9308. Taking all of this into account, the multiple linear regression model (race distance + climb per km as IVs) is better than the simple linear regression model (race distance only as IV).
+
+5d. According to this model, how much does the mean finish time increase per additional km?
+
+# According to the multiple linear regression model, women's mean finish time increases by 7 approx. per additional km (i.e. for each +1 increase in race distance variable). Here, we are looking at the coefficient, or slope b, of the IV 'Distance.km.', which is indicated in the model output above, in the 'Estimate' column for the row 'Distance.km.'.
+
+5e. How much does the mean finish time increase per additional meter of climbing per km? 
+
+# According to the multiple linear regression model, women's mean finish time increases by 0.35 approx. per additional meter of climbing/km (i.e. for each +1 increase in climbperkm variable). Here, we are looking at the coefficient, or slope b, of the IV 'climbperkm', which is indicated in the model output above, in the 'Estimate' column for the row 'climbperkm'.
+
+6. Predict the mean female finish time for a race in which distance is 10km with a average climb of 100m per km 
+
+```{r}
+# prediction using integrated predict() function on saved multiple linear regression model
+predict(mod_wft_distclimb, tibble(Distance.km.=10,
+                                  climbperkm=100))
+
+```
+# For a race with distance of 10km and climb per km of 100m, the predicted mean female finish time is equal to 72 minutes approximately (prediction based on multiple linear regression model, mod_wft_distclimb).
+
+
+
+
+
+
+
