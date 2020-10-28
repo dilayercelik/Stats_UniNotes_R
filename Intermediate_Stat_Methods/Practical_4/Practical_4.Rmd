@@ -1,0 +1,150 @@
+---
+title: "Practical 4 - Multiple Regression"
+author: "Dilay Fidan Ercelik"
+date: "10/28/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+1. Data Wrangling
+```{r}
+library(tidyverse)
+library(broom)
+
+ratings <- read_csv('data/voice_ratings.csv')
+  
+acoustics <- read_csv('data/voice_acoustics.csv')
+
+```
+
+
+```{r}
+# 1. wide -> long
+ratings_tidy <- ratings %>% gather(participant, rating, P1:P28)
+
+```
+
+```{r}
+# 2. mean rating for each voice
+ratings_mean <- ratings_tidy %>% group_by(VoiceID) %>% summarise(mean_rating=mean(rating))
+
+```
+
+```{r}
+# 3. joining dataframes
+joined <- inner_join(ratings_mean, acoustics, by='VoiceID')
+
+```
+
+```{r}
+# 4. filtering data for male voices
+joined <- joined %>% filter(sex=='M')
+```
+
+
+2. Plot Your Data
+```{r}
+ggplot(joined, aes(x=value, y=mean_rating)) +
+  geom_point() +
+  geom_smooth(method='lm', formula= y~x) +
+  labs(title='Scatter Plot', x='Voice Measure (Hz)', y='Mean Trustworthiness Rating') +
+  facet_wrap(~measures) + 
+  theme_classic()
+
+```
+
+3. Spread the Data
+```{r}
+joined_wide <- joined %>% spread(measures, value)
+```
+
+
+4. Check for Collinearity (between two IVs)
+```{r}
+cor_IVs <- cor.test(joined_wide %>% pull(Pitch), joined_wide %>% pull(Dispersion)) %>%
+  
+  tidy()
+```
+
+Testing the hypothesis that there would be a relationship between dispersion and pitch in men, a pearson correlation found a NON significant relationship between the dispersion and pitch values, r(30) = 1.09, p = 0.283 (p>.05) 
+
+This demonstrates that the assumption of no multicollinearity (between the 2 IVs, pitch and dispersion) is satisfied.
+
+
+5. Running Regression Models
+
+```{r}
+# simple linear regression: predicting trustworthiness mean ratings from Pitch
+
+mod_pitch <- lm(mean_rating~Pitch, dat=joined_wide)
+summary(mod_pitch)
+```
+
+```{r}
+# simple linear regression: predicting trustworthiness mean ratings from Dispersion
+
+mod_disp <- lm(mean_rating~Dispersion, dat=joined_wide)
+summary(mod_disp)
+```
+
+```{r}
+# MULTIPLE linear regression: predicting trustworthiness mean ratings from Pitch and Dispersion
+
+mod_pitchdisp <- lm(mean_rating~Pitch + Dispersion, dat=joined_wide)
+summary(mod_pitchdisp)
+```
+
+
+6. Making Interpretations
+
+- How much of the variance in trustworthiness is explained by dispersion alone?
+# ANSWER: Around 6% of the variance in trustworthiness is explained by dispersion alone (target value: Multiple R-squared in the output of mod_disp, 0.06191)
+
+- How much of the variance in trustworthiness is explained by the model with dispersion and pitch included?
+# ANSWER: Around 35% of the variance in trustworthiness is explained by the model with dispersion AND pitch (target value: Multiple R-squared in the output of mod_pitchdisp, 0.3501)
+
+- Of the three models which is the best model?
+# ANSWER: Out of all 3 models, the best one seems to be the first, i.e. the simple linear regression model with IV = Pitch. Indeed, we can easily see, in the output of the third mutliple linear regression model, that there is a NON-signficant linear relationship between trustworthiness mean ratings and Dispersion (t-value = 0.927, with p>.05). Additionally, other measures display us a similar picture: the multiple R-squared value (also called 'coefficient of determination') is only 0.06, showing that only a low amount of variance in trustworthiness mean ratings is explained by Dispersion alone (6%). In the second model (simple linear regression with IV = Dispersion alone), the F-statistic and its associated p-value also suggests this model is not a good fit for the data at hand (F(1, 30) = 1.98, p>.05)
+
+
+
+7. Making Predictions
+```{r}
+# predict perceived trustworthiness for a voice with Pitch = 150 Hz and Dispersion = 1100 Hz
+
+predict(mod_pitchdisp, tibble(Pitch=150,
+                              Dispersion=1100))
+```
+# For someone's voice with a pitch of 150 Hz (quite high) and dispersion of 1100 Hz (somewhere in the middle), the predicted perceived trustworthiness rating is equal to 5.29 (prediction based on 3rd multiple linear regression model, mod_pitchdisp)
+
+
+```{r}
+# predict the perceived trustworthiness of someone with Pitch = 120 Hz and Dispersion = 1200 Hz
+
+predict(mod_pitchdisp, tibble(Pitch=120,
+                              Dispersion=1200))
+
+```
+# For someone's voice with a pitch of 120 Hz and dispersion of 1200 Hz, the predicted perceived trustworthiness rating is equal to 4.99 (prediction based on 3rd multiple linear regression model, mod_pitchdisp)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
