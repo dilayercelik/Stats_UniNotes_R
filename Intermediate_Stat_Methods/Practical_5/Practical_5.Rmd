@@ -1,0 +1,161 @@
+---
+title: "Practical 5"
+author: "Dilay Fidan Ercelik"
+date: "11/4/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Set Up
+```{r}
+pinfo<-read.csv("data/participant_info.csv")
+wellbeing<-read.csv("data/wellbeing.csv")
+screen<-read.csv("data/screen_time.csv")
+```
+
+```{r}
+library('tidyverse')
+```
+
+# Data Wrangling
+
+Task 1 - Compute the well-being score for each participant
+```{r}
+wemwbs <- wellbeing %>% gather(question, score, WBOptimf:WBCheer) %>% group_by(Serial) %>% summarise(tot_wellbeing=sum(score))
+```
+
+Task 2 - Compute average smart phone use for each participant
+```{r}
+tot_smart <- screen %>% gather(day,hours,Smart_we:Smart_wk) %>% 
+  group_by(Serial) %>% summarise(tot_smart=mean(hours)) %>% filter(tot_smart>1)
+```
+
+Task 3 - Combine the data
+```{r}
+smartphone <- inner_join(tot_smart, wemwbs, by='Serial') %>% inner_join(pinfo, by='Serial')
+```
+
+
+# Visualising the Data
+
+Task 4 - Graph wellbeing by days of use
+```{r}
+summary_table <- smartphone %>% group_by(tot_smart, sex) %>% summarise(mean_wellbeing=mean(tot_wellbeing)) %>% mutate(sex= recode(as.character(sex),"1"="Male","0"="Female"))
+
+ggplot(summary_table, aes(x=tot_smart, y=mean_wellbeing, group=sex)) +
+  geom_point(aes(colour=sex)) +
+  geom_smooth(method='lm', aes(colour=sex)) +
+  labs(x="Hours",y="Wellbeing") +
+  theme_bw()
+  
+```
+NOTE: Although we normally encourage ploting raw data-points we are using means here. This is because we have tens of thousands of observations so it is hard to see patters in the raw data.
+
+
+# A side point on mean centering and deviation coding
+
+- mean centering of our continuous variable
+- deviation coding of our categorical variable
+```{r}
+smartphone <- smartphone %>%
+  mutate(tot_smart_c = tot_smart - mean(tot_smart),
+         sex_c = ifelse(sex == 1, .5, -.5)) %>%
+  select(-tot_smart, -sex)
+```
+
+tot_smart_c is the mean centered values of tot_smart
+
+sex_c is the deviation coding of the sex column (sex) where male, which was coded as 1, is now coded as .5, and female is now coded as -.5 instead of 0. The ifelse() basically says, if that column you want me to look at, says this (e.g. sex == 1), then I will put a .5, otherwise (or else) I will put a -.5.
+
+
+# Estimating model parameters
+
+
+Task 5 - Run the model
+```{r}
+ANCOVAmodel <- lm(tot_wellbeing ~ tot_smart_c * sex_c , dat=smartphone)
+
+summary(ANCOVAmodel)
+```
+
+
+
+# Final Interpretations
+
+Task 6 - Interpretation
+
+1. Which variable shows the interaction between smartphone use and gender?
+#ANSWER: This is the tot_smart_c:sex_c variable.
+
+2. Was this interaction significant?
+#ANSWER: The interaction was significant: p<.05
+
+3. What is the intercept for male participants?
+```{r}
+# The intercept for the male regression line = the Intercept + (the beta of sex_c * .5)
+
+int_m<-47.43724+5.13968*.5 # 50.007
+```
+
+
+4. What is the slope for male participants?
+```{r}
+# The slope of the male regression line = the beta of the tot_hours_smart_c + (the beta of interaction * .5) 
+
+slope_m<--0.54518+(0.45205*.5)  # -0.319
+```
+
+
+5. What is the intercept for female participants?
+```{r}
+# The intercept for the female regression line = the Intercept + (the beta of sex_c * -0.5)
+int_f<-47.43724+5.13968*(-.5)  # 44.867
+```
+
+
+6. What is the slope for female participants?
+```{r}
+# The slope of the female regression line = the beta of the tot_hours_smart_c + (the beta of interaction * (-0.5)) 
+
+slope_f<--0.54518+(0.45205*(-.5))  # -0.771
+```
+
+
+7. Given the model of Y = intercept + (slope * X) where Y is well-being and X is total hours on smartphone, what would be the predicted well-being score for a male and a female who use their smartphones for 8 hours?
+```{r}
+# male 
+Y_m <- int_m + slope_m * 8
+
+Y_f <- int_f + slope_f * 8
+
+```
+
+
+8. How would you interpret these results?
+#ANSWER: Smartphone use was more negatively associated with well-being for girls than for boys. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
