@@ -1,0 +1,103 @@
+---
+title: "ANCOVA homeowkr"
+author: "Sarah"
+date: "25/09/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+For your homework you are going to be running a GLM with one categorical and one continuous (numerical) predictor. The data are from a study testing the hypothesis that people are more comfortable with potentially infectious contact with people they like ( https://journals.sagepub.com/doi/full/10.1177/0956797620960011). Comfort with contact was measured with 10 items measuring how comfortable the participant was with different forms of potentially contaminating contact e.g. "Touching a handkerchief that [target] used to blow his or her nose.” Participants rated each item on a scale from −3 (very uncomfortable) to 3 (very comfortable). Each participant was told to think about a person with which they had one specific type of relationship (1 = romantic partner, 2 = closest friend, 3 = acquaintance, 4 = enemy). Additionally participants completed a disgust sensitivity measure to determine how cautious about infection they were in general. Disgust sensitivity is used as a covariate in the analysis.  
+
+```{r}
+library('tidyverse')
+```
+
+Download the data from Moodle and read it in by running the code below:
+```{r}
+infection <- read.csv("data/infection.csv")
+```
+
+1. Calculate each participant's mean score on the comfort scale by first gathering the data into long format and then calculating the mean 
+
+```{r}
+indvdl_mean_comf <- infection %>% gather(Comfort_Item, Value, comf1:comf10) %>% group_by(participant) %>% summarise(indvdl_mean_comf=mean(Value))
+```
+
+2. Calculate each participant's mean score on the disgust sensitivity scale using the same method. 
+
+```{r}
+indvdl_mean_DS <- infection %>% gather(DS_Item, Value, DS1:DS7) %>% group_by(participant) %>% summarise(indvdl_mean_DS=mean(Value))
+```
+
+3. Merge the two mean score variables back into the infection dataset 
+
+```{r}
+infection <- inner_join(infection, indvdl_mean_comf, by='participant') %>% inner_join(indvdl_mean_DS, by='participant')
+```
+
+4. Each participant was told to think about one type of relationship whilst completing the comfort questions. Recode the values in relationship_category to the following labels: "1.romantic partner", "2.closest friend", "3.acquaintance", "4.enemy"
+
+```{r}
+infection <- infection %>% mutate(relationship_category=recode(relationship_category,"1"="romantic partner","2"="closest friend", "3"="acquaintance", "4"="enemy"))
+```
+
+5. Graph the relationship between relationship category and comfort
+
+```{r}
+summary_table <- infection %>% drop_na() %>% group_by(relationship_category) %>% summarise(mean_comf=mean(indvdl_mean_comf))
+  
+ggplot(summary_table, aes(x=relationship_category, y=mean_comf)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  labs(x="Relationship Category",y="Mean Comfort") +
+  theme_bw()
+```
+
+6. Graph the relationship between disgust sensitivity and comfort. 
+
+```{r}
+ggplot(infection, aes(x=indvdl_mean_DS, y=indvdl_mean_comf)) +
+  geom_point() +
+  geom_smooth(method='lm') +
+  labs(x="Disgust Sensitivity",y="Comfort") +
+  theme_bw()
+```
+
+7a. Run a GLM with relationship category predicting comfort
+
+```{r}
+mod_1IV <- lm(indvdl_mean_comf~relationship_category, dat=infection)
+
+summary(mod_1IV)
+```
+
+7b. Does relationship predict comfort with contact? How do you know?
+
+Relationship Category seems to predict comfort with contact, with p-values of all 4 relationship categories being significant (p<.05)
+
+8a. Now run a GLM with relationship and disgust sensitivity predicting comfort 
+
+```{r}
+mod_2IV <- lm(indvdl_mean_comf ~ relationship_category + indvdl_mean_DS, dat=infection)
+
+summary(mod_2IV)
+```
+
+8b. How much variance does this model explain? Does this suggest it is a better model than the model with only relationship sensitivity? 
+
+This model explains 60% of the variance in the data (comfort with contact). This is greater than the variance explained by the previous model (57%), which suggests that this model is better than the model with only relationship sensitivity as predictor.
+
+9a. To formally test whether adding disgust sensitivity improves the model, compare these two models using the anova() function 
+
+```{r}
+anova(mod_2IV, mod_1IV)
+```
+
+9b. What do the results of the model comparison tell you?
+
+There results tell us that the larger model (model 1 in the output, called mod_2IV) is a significantly better fit than the smaller model (model 2 in the output, called mod_1IV), since p<.05.
+
+
