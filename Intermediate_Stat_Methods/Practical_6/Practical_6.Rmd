@@ -1,0 +1,296 @@
+---
+title: "Practical 6"
+author: "Dilay Fidan Ercelik"
+date: "11/18/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Set Up
+```{r}
+install.packages('pwr')
+library(pwr)
+
+library(tidyverse)
+```
+
+
+Part 1. Power analysis
+
+
+# 1. Determining sample size required for a given power
+
+```{r}
+# default sig.level = .05 
+pwr.t.test(d=0.5, power=.8)
+```
+Thus, about 64 participants would be needed in each group in order to test the hypothesis with adequate power (80%) at alpha of .05.
+
+
+```{r}
+# sig.level = 0.01
+pwr.t.test(d=0.5, power=.8, sig.level = 0.01)
+```
+This increases group size to 95.
+
+
+
+# 2. Determining the power to detect effect sizes, given a specific sample size
+
+```{r}
+pwr.t.test(n=75, d=0.5) 
+```
+With 75 participants in each group, a two sample t-test has 86% power to detect an effect of .5, given alpha of .05.
+
+
+There are different options depending on the study design. If it is a one sample t-test, you use the parameter type='one.sample' or if it is a paired t-test you type type='paired'. The default is type='two.sample' for an independent t-test.
+
+```{r}
+# one sample t-test
+pwr.t.test(n=75, d=0.5, type='one.sample') 
+```
+Using 75 participants in a one sample t-test, with alpha of .05 and assumed effect size of .5, the resulting power is 99%.
+
+
+# 3. Determining the minimum effect size that a specific sample can detect with a specific power
+
+```{r}
+pwr.t.test(n=75, power=.9, sig.level=.01,  type='one.sample')
+```
+Using 75 participants in a one sample t-test, with alpha of .01 and required power of 90%, you have the power to detect an effect size of .46 and above.
+
+
+# Tasks using power analysis
+
+1. Try to consider whether a paired or 2 sample t-test would give the highest power if all else was equal. Then run some code to find out.
+```{r}
+# paired
+pwr.t.test(n=75, d=0.5, type='paired')   # higher power than in two sample t-test
+```
+
+```{r}
+# two-sample
+pwr.t.test(n=75, d=0.5, type='two.sample')
+```
+
+Higher power in paired t-test than in two-sample independent t-test because samples are more similar in the paired t-test (same participants).
+
+
+2. Run the code for an independent t-test with 25 in each group, expecting to find an effect size of 1.0 - what is the power, if your alpha level was 0.01?
+```{r}
+pwr.t.test(n=25, d=1, sig.level = 0.01)  
+```
+Power = 80%
+
+
+3. What effect size would you have at least 80% power to determine if you had a sample of 50 in a one sample t-test?
+```{r}
+pwr.t.test(n=50, power=.8, type='one.sample')  # sig.level = .05
+```
+Min Effect Size detectable = 0.4
+
+
+4. To seek a 0.5 effect size with 90% power in a paired t-test, how many participants would you need?
+```{r}
+pwr.t.test(d=0.5, power=.9, type='paired')   # sig.level = .05
+```
+N of Participant Pairs needed: 44
+
+
+
+Part 2. Power Curves
+
+
+```{r}
+effect_sizes <- c(0.25, 0.5, 0.75) # 3 different effect sizes
+
+sample_sizes = seq(10, 500, 10) # going from 10 to 500 in increments of 10
+
+input_df <- crossing(effect_sizes,sample_sizes)
+
+head(input_df)
+```
+Using this, we can then perform a power analysis for each combination of effect size and sample size to create our power curves. In this case, let’s say that we wish to perform a two-sample t-test.
+
+```{r}
+# new get_power function: return the power of a given set of sample and effect sizes, saved in a dataframe df
+
+get_power <- function(df){
+  power_result <- pwr.t.test(n=df$sample_sizes, 
+                             d=df$effect_sizes)
+  df$power=power_result$power
+  return(df)
+}
+
+```
+
+```{r}
+power_curves <- get_power(input_df) 
+
+head(power_curves)
+```
+Before we plot the power curve we need to convert effect_size to a factor so it can be a grouping variable
+
+```{r}
+power_curves <- power_curves %>% mutate(effect_sizes = as.factor(effect_sizes)) 
+```
+
+```{r}
+ggplot(power_curves, aes(x=sample_sizes, y=power, linetype=effect_sizes)) + 
+  geom_line() + 
+  geom_hline(yintercept = 0.8, color='green') +
+  theme_light() +
+  ggsave('power_curve.jpg')
+```
+- required sample size for each effect size to reach 80% power:
+    for d = 0.25, n = 250
+    for d = 0.5, n =  60 approx
+    for d = 0.75, n = 30 approx
+    
+- If you are seeking a .75 effect size, is there any incremental benefit in power once your sample size reaches 100?
+Not for effect sizes 0.5 and 0.75
+
+
+
+Part 3. Simulating statistical power
+
+
+1. 
+```{r}
+effectSize <- 0.5
+```
+
+2.
+```{r}
+pwr.result <- pwr.t.test(d=effectSize, power=.8)
+
+# round up from estimated sample size
+sampleSize <- ceiling(pwr.result$n)    # 64
+```
+
+3. 
+```{r}
+get_t_result <- function(sampleSize, effectSize){
+  group1 <- rnorm(sampleSize) # normal sample with mean of 0, sd of 1
+  group2 <- rnorm(sampleSize, mean=effectSize) # normal sample with mean of effect size, sd of 1
+  ttest.result <- t.test(group1, group2) #carry out a t-test
+  return(tibble(pvalue=ttest.result$p.value)) # return the p-value
+}
+```
+
+4.
+```{r}
+get_t_result(sampleSize, effectSize)
+```
+
+5. 
+```{r}
+nRuns <- 1000
+```
+
+6.
+```{r}
+index_df <- tibble(id=seq(nRuns)) %>%
+  group_by(id) #this group_by() command is so that the function runs for each simulation
+
+power_sim_results <- index_df %>%
+  do(get_t_result(sampleSize, effectSize)) #this runs the get_t_result function for the index_df table
+
+power <- power_sim_results %>% ungroup() %>% summarize(pvalue = mean(pvalue<.05)) %>% pull()
+
+power
+```
+
+
+# Tasks with simulation
+
+Create a similar simulation for an effect size of .6, a significance level of 0.01 and a power of 90%. This time use 5000 simulations
+
+```{r}
+effectSize <- 0.6
+
+pwr.result <- pwr.t.test(d=effectSize, power=.9, sig.level = 0.01)
+sampleSize <- ceiling(pwr.result$n)
+
+get_t_result(sampleSize, effectSize)
+
+nRuns <- 5000
+
+index_df_2 <- tibble(id=seq(nRuns)) %>%
+  group_by(id) #this group_by() command is so that the function runs for each simulation
+
+power_sim_results_2 <- index_df_2 %>%
+  do(get_t_result(sampleSize, effectSize)) #this runs the get_t_result function for the index_df table
+
+power_2 <-
+  power_sim_results_2 %>%
+  ungroup() %>% #this 
+  summarize(pvalue = mean(pvalue<.05)) %>%
+  pull()
+
+power_2   # pvalue output = 4.55e-06
+
+
+```
+
+
+
+# EXTENSION TASK
+
+1. Going back to part 2 (power curves), modify the get_power() function to show power to find a fixed effect size (d=0.5) for a range of significance levels (0.05, 0.01, 0.001) and sample sizes (from 0 to 200 in increments of 5) and then graph them up as before. Study design is paired t-test. HINT: use the crossing() function to make your table of inputs
+
+ANSWER: 
+```{r}
+get_power_extension <- function(df){
+  power_result <- pwr.t.test(n=df$sample_sizes, 
+                             d=0.5,
+                             sig.level = df$significance_levels,
+                             type='paired')
+  df$power=power_result$power
+  return(df)
+}
+```
+
+```{r}
+significance_levels <- c(0.05, 0.01, 0.001) # 3 different significance levels
+
+sample_sizes = seq(0, 200, 5) # going from 0 to 200 in increments of 5
+
+input_df_extension <- crossing(significance_levels, sample_sizes)
+
+head(input_df_extension)
+```
+```{r}
+power_curves_extension <- get_power_extension(input_df_extension) 
+
+head(power_curves_extension)
+```
+
+```{r}
+power_curves_extension <- power_curves_extension %>% mutate(significance_levels = as.factor(significance_levels)) 
+```
+
+```{r}
+ggplot(power_curves_extension, aes(x=sample_sizes, y=power, linetype=significance_levels)) + 
+  geom_line() + 
+  geom_hline(yintercept = 0.8, color='green') +
+  theme_light() + 
+  labs(title='Power Curve for fixed effect size of 0.5 (paired samples t-test)')
+  ggsave('power_curve_extension_task.jpg')
+```
+
+
+2. Reading from the graph, what sample size is needed if one assumes an alpha level of 0.001 at 80% power?
+
+ANSWER: sample size needed if one assumes an alpha level of 0.001 at 80% power, for an effect size of 0.5, is: 75 
+
+
+
+
+
+
