@@ -1,0 +1,101 @@
+---
+title: "Week 6: Alpha, Power and Effect Sizes Homework"
+output:
+  html_document: default
+  keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# install.packages("pwr")
+library(pwr)
+library(tidyverse)
+```
+
+### Tasks using power analysis
+
+1. What is the power to detect an effect size of .33 in a between (= two-sample) samples t-test with 60 in each group and alpha of .05. Is this adequate?
+
+```{r echo=FALSE, eval=FALSE}
+pwr.t.test(n=60, d=0.33, sig.level = .05, type='two.sample')
+```
+This is not adequate since our resulting power is only about 43%, which means that, with these parameters, we only hold 43% power to be able to detect the effect, even if the effect truly existed.
+
+
+2. How many would be needed in each group to obtain a power of 80% with this design?
+
+```{r echo=FALSE, eval=FALSE}
+pwr.t.test(power=.8, d=0.33, sig.level = .05, type='two.sample')
+```
+With this experimental design, we would need 146 participants (rounded up) in each group to obtain a 80% power to detect the effect.
+
+3. What effect size would you have at least 90% power to detect if you had a sample of 20 in a paired t-test?
+
+```{r echo=FALSE, eval=FALSE}
+pwr.t.test(n=20, power=.9, type='paired')  # default sig.level = .05
+```
+With this experimental design, you would only be able to detect effect sizes of 0.76 and above with a power of 90%.
+
+4. To seek a 0.5 effect size with 80% power in an independent t-test, with alpha of .01, how many participants would you need in each group?
+
+```{r echo=FALSE, eval=FALSE}
+pwr.t.test(d=0.5, power=.8, sig.level = .01, type='two.sample')
+```
+With this experimental design, you would need 96 (rounded up) participants in each group.
+
+5. Create a power curve graph for the following experiment:
+
+Sample size of between 15 and 75 per group, going up in increments of 5.
+Effect sizes of .3, .6 and .9
+Alpha fixed at .05
+Two sample t-test.
+
+```{r}
+# create a function outputing the power given some parameters about the experimental design
+get_power <- function(df){
+  power_result <- pwr.t.test(n=df$sample_sizes, 
+                             d=df$effect_sizes,
+                             sig.level = .05,
+                             type='two.sample')
+  df$power=power_result$power
+  return(df)
+}
+
+# setting remaining parameters (with ranges) and creating the df input to the power curve
+effect_sizes <- c(.3, .6, .9) # 3 different significance levels
+sample_sizes = seq(15, 75, 5) # going from 0 to 200 in increments of 5
+input_df <- crossing(effect_sizes, sample_sizes)
+
+# creating our power curve on our input df
+power_curves <- get_power(input_df)
+power_curves <- power_curves %>% mutate(effect_sizes = as.factor(effect_sizes)) 
+
+# plotting the power curve
+ggplot(power_curves, aes(x=sample_sizes, y=power, linetype=effect_sizes)) + 
+  geom_line() + 
+  geom_hline(yintercept = 0.8, color='green') +
+  theme_light() + 
+  labs(title='Power Curve for fixed alpha of .05 (two samples t-test)')
+  ggsave('power_curve_hwk6.jpg')
+
+```
+
+6. Draw a horizontal line to mark where 80% power is, and estimate the required sample size, assuming an effect size of .9
+
+We created the horizontal line to in the previous code cell, using the geom_hline() function.
+Assuming an effect size of .9 (predicted), for a significance level of .05 in a two sample-test, we would need 20 participants in each group to hold 80% power to detect the effect, if it truly exists.
+
+7. With an assumed effect size of .6, would there be any point seeking a sample size greater than 50 per group?
+
+Assuming an effect size of .6, for a significance level of .05 in a two sample-test, we would need approx 45 participants in each group to hold 80% power to detect the effect, if it truly exists. In this sense, if we are satisfied with a 80% power, which is typically considered as an 'adequate' amount of power, then we would have no problem in having a sample size of 50 participants per group, which leads to a power just above 80%. However, this is left to the decision of the researcher. Indeed, they could be willing to increase their power beyond the generally accepted percentage value of 80%, as increasing power never hurts. But, if it is practically difficult to increase the power beyond 80-85% because of, for example, difficulty in recruiting more participants (costly, time-consuming, or plainly impossible), then it is okay to proceed with the experiment with 50 participants per group; in this sense, there may be no point in seeking a sample size greater than 50 per group, given our satisfaction with an 80% power and/or the impossibility to recruit more participants (if we were willing to hold a >80% power).
+
+
+
+
+
+
+
