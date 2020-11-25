@@ -1,0 +1,134 @@
+---
+title: "Practical 7"
+author: "Dilay Fidan Ercelik"
+date: "11/25/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+1. Set Up
+```{r}
+library(tidyverse)
+
+install.packages('NHANES')
+library(NHANES)
+```
+
+```{r}
+# 3.
+data <- NHANES
+
+# 4. 
+data <- data %>% distinct(ID, .keep_all = TRUE)
+
+# 5.
+data <- data %>% filter(!is.na(Diabetes)) %>% filter(!is.na(PhysActive))
+
+```
+
+2. Calculating Probabilities
+
+```{r}
+# 1.
+diabetes_count <- data %>% count(Diabetes) %>% mutate(prob=n/sum(n))
+```
+
+```{r}
+# 2.
+p_diabetes <- diabetes_count %>% #start with the table above
+  pull(prob) %>% #select the prob variable which has values c(.89, .10)
+  pluck(2) #select the 2nd value in the sequence, i.e. .10
+
+```
+
+```{r}
+# 3.
+physic_count <- data %>% count(PhysActive) %>% mutate(prob=n/sum(n))
+```
+
+```{r}
+# 4.
+p_inactive <- physic_count %>%
+  pull(prob) %>%
+  pluck(1)
+```
+
+
+3. Conditional Probabilities
+
+```{r}
+# 1.
+NHANES_diabetes_stats_by_activity <- data %>% 
+  count(Diabetes, PhysActive) %>% 
+  mutate(prob = n / sum(n))
+```
+
+
+```{r}
+# 2.
+p_diabetes_and_inactive <- NHANES_diabetes_stats_by_activity %>% pull(prob) %>% pluck(3)  # Diabetes = Yes, PhysActive = No
+```
+
+```{r}
+# 3.
+p_diabetes_given_inactive <- p_diabetes_and_inactive / p_inactive  # slide 5 of the Lecture 7, i.e. joint_proba(diabetes AND inactivity) / overall_proba_of_inactivity
+```
+
+```{r}
+# 4.
+p_diabetes_and_active <- NHANES_diabetes_stats_by_activity %>% pull(prob) %>% pluck(4)  # Diabetes = Yes, PhysActive = Yes
+```
+
+```{r}
+# 5.
+p_active <- physic_count %>%
+  pull(prob) %>%
+  pluck(2)
+```
+
+```{r}
+# 6.
+p_diabetes_given_active <- p_diabetes_and_active / p_active
+```
+
+
+4. Odds
+
+```{r}
+# 1.
+odds_diabetic <- p_diabetes / (1 - p_diabetes)
+```
+
+```{r}
+# 2.
+odds_diabetic_given_inactive = p_diabetes_given_inactive / (1 - p_diabetes_given_inactive)
+```
+
+```{r}
+# 3.
+odds_diabetic_given_active <- p_diabetes_given_active / (1 - p_diabetes_given_active)
+```
+
+
+5. Odds Ratio
+
+```{r}
+# 1. Odds Ratio of having diabetes if you are physically inactive relative to if you are active (p_diabetes_given_active = base rate)
+odds_ratio <- odds_diabetic_given_inactive / odds_diabetic_given_active
+```
+
+2. 
+Belonging to the physically inactive group increases the odds of having diabetes by 2.265 (going up from 0.07 for active people to 0.16 for inactive people).
+
+
+
+
+
+
+
+
