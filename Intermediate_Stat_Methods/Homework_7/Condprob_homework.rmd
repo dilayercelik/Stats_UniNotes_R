@@ -1,0 +1,83 @@
+---
+title: "Week 7: Conditional Probability and Odds Ratios"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+We are going to use the NHANES dataset again, this time to examine the probability that somebody is depressed, given that they have sleep trouble, that is P(depressed | sleep trouble).
+
+NHANES records two variables that address the two parts of this question. The first is `Depressed`, which records self-reported number of days where participant felt down, depressed or hopeless. Responses are one of None, Several or Most (days). The second, `SleepTrouble`, records whether the person has told a doctor or other health professional that they had trouble sleeping and is coded as Yes or No.
+
+
+1. Install and load the NHANES package and save the NHANES dataset as `data` 
+```{r}
+library(tidyverse)
+library(NHANES)
+
+data <- NHANES
+```
+
+
+2. Remove duplicated entries
+```{r echo=F}
+data <- data %>% distinct(ID, .keep_all=TRUE)
+```
+
+3. Remove entries without variables for `Depressed` or `SleepTrouble`.
+```{r echo=F}
+data <- data %>% filter(!is.na(Depressed)) %>% filter(!is.na(SleepTrouble))
+```
+
+4. To simplify the analysis we will recode `Depressed` so that those answering either 'Several or 'Most' are coded as 'Yes' and those answering `None` are coded as 'No'. HINT: recode()
+
+```{r}
+data <- data %>% mutate(Depressed = recode(Depressed, 'Several' = 'Yes', 'Most' = 'Yes', 'None' = 'No'))                                                                   
+```
+
+
+5. Establish the probability of being depressed or not and save table as object `dep_count`
+```{r}
+dep_count <- data %>% count(Depressed) %>% mutate(prob = n/sum(n))
+```
+
+6. Now do the same for the variable Sleep Trouble and save the probability of having sleep trouble as object `P_sleeptrouble`
+
+```{r}
+sleep_count <- data %>% count(SleepTrouble) %>% mutate(prob = n/sum(n))
+
+P_sleeptrouble <- sleep_count %>% pull(prob) %>% pluck(2)
+```
+
+7. To compute  P(Depressed | SleepTrouble) save a table of all the 4 possible combinations and their joint probabilities as `stats`. 
+
+```{r}
+stats <- data %>% count(Depressed, SleepTrouble) %>% mutate(prob = n/sum(n))
+```
+
+
+8. Save the joint probability of having depression and sleep trouble as `P_dep_and_sleeptrouble`
+```{r}
+P_dep_and_sleeptrouble <- stats %>% pull(prob) %>% pluck(4)
+```
+
+
+9. Based on these joint probabilities, compute the conditional probability of P(Depressed | SleepTrouble) and save as `P_dep_given_sleeptrouble`:
+```{r}
+P_dep_given_sleeptrouble <- P_dep_and_sleeptrouble / P_sleeptrouble
+```
+
+10. What are the odds of having depression given sleep trouble.
+```{r}
+odds = P_dep_given_sleeptrouble / (1 - P_dep_given_sleeptrouble)
+```
+
+
+11. The odds ratio of having depression given sleep trouble relative to no sleep trouble is 2.75x. How would you interpret this result?
+
+WRITE ANSWER: Having sleep trouble increases the odds of having depression by 2.75 (when taking the probability of "no sleep trouble" as our base rate).
+
+
