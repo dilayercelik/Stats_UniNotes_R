@@ -2,16 +2,18 @@
 
 GitHub Repo containing my notes and work in the following statistics modules (using **R Programming Language**): [Introduction to Research Methods](https://www.ucl.ac.uk/module-catalogue/modules/introduction-to-statistical-methods-PALS0046) (Year 1), [Intermediate Statistical Methods](https://www.ucl.ac.uk/module-catalogue/modules/intermediate-statistical-methods-PALS0045) (Year 2) of my undergraduate [MSci Psychology and Language Sciences](https://www.ucl.ac.uk/pals/study/undergraduates/msci-psychology-and-language-sciences) degree at University College London (2019-23).
 
+I have also added the weekly quizzes of my [Calculus and Linear Algreba](https://www.ucl.ac.uk/maths/sites/maths/files/math0045.pdf) module, which I took on my first term of my second-year of undergraduate studies.
+
 # Delivery
 
-These stats modules consist of weekly lectures (1 hour), weekly practical class sessions (2 hours) and weekly homeworks (1-2 hours).
-
-
+The stats modules consist of weekly lectures (1 hour), weekly practical class sessions (2 hours) and weekly homeworks (1-2 hours).
 *PS: there were no practicals and no homeworks on Weeks 1 and 5 of Introduction to Research Methods (Year 1).*
+
+The Calculus and Linear Algebra module consists of weekly lectures (1 hour), weekly live sessions (1h30) and weekly Quizzes.
 
 # Description
 
-## PALS0045 Intermediate Statistical Methods (2020/21)
+## PALS0045 Intermediate Statistical Methods (2020/21 Terms 1&2)
 
 OUTLINE
 Week 1 - Recap of Statistical Methods Year 1: NHST, Type I and II error rates, confidence intervals, effect sizes and more.
@@ -29,8 +31,28 @@ RESULTS: Average NA
 Final Computer Exam: NA
 Coursework Lab Report/Secondary Data Analysis + Pre-Registration Form (OSF): NA
 
+## MATH0045 Calculus and Linear Algebra (2020/21 Term 1)
 
-## PALS0010 Introduction to Research Methods (2019/20)
+OUTLINE
+Week 1 - Introduction to Calculus and Linear Algebra, Recap of some concepts
+Week 2 - Differentiation Rules, Higher-Order Differentiation, Approximations of Functions, L'Hopital's Rule and Applications, Critical Points & Local Maxima/Minima
+Week 3 - Integrals, Definite and Indefinite, Integration Methods
+Week 4 - Series, Convergence Tests (Divergence Test, Comparison Test, Ratio Test, Root Test, Integral Test, p Test) and Proofs
+Week 5 - Series with Alternating Signs and Convergence Test, Power Series, Taylor Series
+Week 6 - Functions of Several Variables: Multivariable Calculus, Gradients of Functions, Expansion of Chain Rule
+Week 7 - Functions of Several Variables Part 2: Taylor series and the quadratic approximation, Critical Points, The Implicit Function Theorem
+Week 8 - Linear Algebra Part 1: Introduction to the Basics and concepts, Linear Dependence/Independence
+Week 9 - 
+Week 10 - 
+
+
+RESULTS
+Final Exam: NA
+Mid-Term Coursework: NA
+Weekly Quizzes Average: NA
+
+
+## PALS0010 Introduction to Research Methods (2019/20 Terms 1&2)
 
 OUTLINE
 Week 1 - Introduction to Research Methods (variables, operationalisation, experimental design, Open Science)
