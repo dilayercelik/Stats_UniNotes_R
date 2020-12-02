@@ -1,0 +1,123 @@
+---
+title: "Week 7: Conditional Probability and Odds Ratios"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+We are going to use the NHANES dataset again, this time to predict a dichotomous outcome variable `SmokeNow`, which denotes whether a participant currently smokes or not, using a continuous predictor `Poverty`, which is a ratio of family income to poverty guidelines. Smaller numbers indicate more poverty. We will also examine the predictive power of the `PhysActive` variable (No=not physically active, yes=physically active).
+
+
+1. Install and load the NHANES package and save the NHANES dataset as `data` and remove duplicated entries (as per last week's homework)
+```{r echo=F}
+library(tidyverse)
+library(broom)
+library(NHANES)
+library(ResourceSelection)
+library(pscl)
+```
+
+```{r}
+data <- NHANES
+```
+
+```{r}
+data <- data %>% distinct(ID, .keep_all = TRUE) 
+``` 
+
+
+2. Remove entries without variables for `SmokeNow`, `Poverty` or `PhysActive`.
+```{r echo=F}
+data <- data %>% drop_na(c(SmokeNow, Poverty, PhysActive))
+```
+
+3. Plot Poverty against SmokeNow to investigate the relationship, HINT: use alpha=.1 so that you can see how dense the dots are, as there are lots of data points
+```{r}
+ggplot(data, aes(x=Poverty, y=SmokeNow)) +
+  geom_point(alpha=0.1) +
+  labs(title = 'Relationship between Poverty Score and Current Smoking Status', subtitle = '(Higher Poverty Score reflecting decreased poverty)')
+```
+
+4. Build a model to investigate whether Poverty score predicts whether or not someone will smoke.
+```{r}
+logr_poverty <- glm(SmokeNow ~ Poverty, family = binomial, data = data)
+```
+
+```{r}
+summary(logr_poverty)
+```
+
+
+5. Check Coefficients (log odds) and interpret them- what does a 1 point increase in poverty score (i.e. the person is less poor) do to the log odds of smoking? Is it signficant?
+```{r}
+coef(logr_poverty) 
+```
+
+A 1 unit increase in Poverty score (being less poor, since the 1-5 scale is such that lower points refer to higher poverty) decreases the log odds of smoking by 0.28. 
+
+
+6. Are any of the standardised residuals greater than 3 or less than -3?
+```{r}
+model.data <- augment(logr_poverty) 
+
+ggplot(model.data, aes(x=abs(.std.resid))) + 
+  geom_histogram() +
+  labs(x = 'standardised residuals')
+```
+Checking the scale of the y-axis above, we can see that the standardised residuals are neither greater than 3 nor less than -3, which means the assumption is met.
+
+7. Is it a well-fitting model?
+```{r}
+# GOF Test
+hl <- hoslem.test(logr_poverty$y, fitted(logr_poverty))
+
+hl
+```
+Since we get a significant result (p<.05), this shows us that the data does not fit the model well: A non-significant hosmer-lemeshow test chi sq would have indicated that the data fit the model well.
+
+
+8. How much variance is explained by this model?
+```{r}
+pR2(logr_poverty)
+```
+Reporting the McFadden's Pseudo R squared, the amount of variance in the data explained by the logr_poverty model is 3.8e-02, i.e. very little of it.
+
+
+9. Build a model to show the impact of poverty and physical activity on likelihood of smoking and compare it to the previous model.
+```{r}
+logr_poverty_physact <- glm(SmokeNow ~ Poverty * PhysActive, family = binomial, data = data)
+
+summary(logr_poverty_physact)
+```
+
+```{r}
+# comparing the 2 models
+anova <- anova(logr_poverty, logr_poverty_physact, test='Chisq')
+
+anova
+```
+
+We get a significant result (p<.05), which tells us that the more complex model (logr_poverty_physact) is a better model, compared to the previous logr_poverty model.
+
+
+10. Is this model a good fit to the data?
+```{r}
+# GOF Test
+hl2 <- hoslem.test(logr_poverty_physact$y, fitted(logr_poverty_physact))
+
+hl2
+```
+
+We obtain a significant result (p<.05), telling us that the logr_poverty_physact model is not a good fit to the data.
+
+11. How much variance is explained?
+```{r}
+pR2(logr_poverty_physact)
+```
+
+Reporting the McFadden's Pseudo R squared, the amount of variance in the data explained by the logr_poverty_physact model is 4.4e-02, i.e. very little of it, but still greater than the variance explained by the logr_poverty model.
+
+
