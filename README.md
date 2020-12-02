@@ -15,63 +15,106 @@ The Calculus and Linear Algebra module consists of weekly lectures (1 hour), wee
 
 ## PALS0045 Intermediate Statistical Methods (2020/21 Terms 1&2)
 
-OUTLINE
+*OUTLINE*
+
 Week 1 - Recap of Statistical Methods Year 1: NHST, Type I and II error rates, confidence intervals, effect sizes and more.
+
 Week 2 - The General Linear Model: One-Way ANOVA
+
 Week 3 - The General Linear Model: Two-Way ANOVA
+
 Week 4 - The General Linear Model: Mutliple Regression
+
 Week 5 - The General Linear Model: ANCOVA
+
 Week 6 - Alpha, Power, Effect Sizes (APES)
+
 Week 7 - Conditional Probabilities and Odds Ratio
 Week 8 - Logistic Regression
+
 Week 9 - Bayes I
+
 Week 10 - Bayes II
 
-RESULTS: Average NA
+
+*RESULTS: Average NA*
+
 Final Computer Exam: NA
+
 Coursework Lab Report/Secondary Data Analysis + Pre-Registration Form (OSF): NA
+
 
 ## MATH0045 Calculus and Linear Algebra (2020/21 Term 1)
 
-OUTLINE
+*OUTLINE*
+
 Week 1 - Introduction to Calculus and Linear Algebra, Recap of some concepts
+
 Week 2 - Differentiation Rules, Higher-Order Differentiation, Approximations of Functions, L'Hopital's Rule and Applications, Critical Points & Local Maxima/Minima
+
 Week 3 - Integrals, Definite and Indefinite, Integration Methods
+
 Week 4 - Series, Convergence Tests (Divergence Test, Comparison Test, Ratio Test, Root Test, Integral Test, p Test) and Proofs
+
 Week 5 - Series with Alternating Signs and Convergence Test, Power Series, Taylor Series
+
 Week 6 - Functions of Several Variables: Multivariable Calculus, Gradients of Functions, Expansion of Chain Rule
+
 Week 7 - Functions of Several Variables Part 2: Taylor series and the quadratic approximation, Critical Points, The Implicit Function Theorem
+
 Week 8 - Linear Algebra Part 1: Introduction to the Basics and concepts, Linear Dependence/Independence
+
 Week 9 - 
+
 Week 10 - 
 
 
-RESULTS
+*RESULTS: Average NA*
+
 Final Exam: NA
+
 Mid-Term Coursework: NA
+
 Weekly Quizzes Average: NA
 
 
 ## PALS0010 Introduction to Research Methods (2019/20 Terms 1&2)
 
-OUTLINE
+*OUTLINE*
+
 Week 1 - Introduction to Research Methods (variables, operationalisation, experimental design, Open Science)
+
 Week 2 - Reliability and Validity
+
 Week 3 - Descriptive Statistics
+
 Week 4 - Data Visualisation (R's ggplot)
+
 Week 5 - Qualitative Analysis (external)
+
 Week 6 - Probability Theory
+
 Week 7 - Sampling and Estimation
+
 Week 8 - Hypothesis Testing and NHST
+
 Week 9 - One Sample and Two Sample t-tests
+
 Week 10 - Paired Sample t-tests
+
 Week 11 - Chi-squared test and Categorical Data Analysis
+
 Week 12 - One-Way ANOVA, extension from t-tests
+
 Week 13 - Correlation and Regression
 
-RESULTS: Average 91.67% (First-Class) 
+
+*RESULTS: Average 91.67% (First-Class)*
+
 Final Computer Exam (3-hours, 33.3%): 95% 
+
 MCQ Exam (33.3%): 100%
+
 Coursework Essay on Qualitative Analysis (33.3%): 80% (First)
 
 
