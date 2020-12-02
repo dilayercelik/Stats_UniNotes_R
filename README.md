@@ -9,6 +9,49 @@ These stats modules consist of weekly lectures (1 hour), weekly practical class 
 
 *PS: there were no practicals and no homeworks on Weeks 1 and 5 of Introduction to Research Methods (Year 1).*
 
+# Description
+
+## PALS0045 Intermediate Statistical Methods (2020/21)
+
+OUTLINE
+Week 1 - Recap of Statistical Methods Year 1: NHST, Type I and II error rates, confidence intervals, effect sizes and more.
+Week 2 - The General Linear Model: One-Way ANOVA
+Week 3 - The General Linear Model: Two-Way ANOVA
+Week 4 - The General Linear Model: Mutliple Regression
+Week 5 - The General Linear Model: ANCOVA
+Week 6 - Alpha, Power, Effect Sizes (APES)
+Week 7 - Conditional Probabilities and Odds Ratio
+Week 8 - Logistic Regression
+Week 9 - Bayes I
+Week 10 - Bayes II
+
+RESULTS: Average NA
+Final Computer Exam: NA
+Coursework Lab Report/Secondary Data Analysis + Pre-Registration Form (OSF): NA
+
+
+## PALS0010 Introduction to Research Methods (2019/20)
+
+OUTLINE
+Week 1 - Introduction to Research Methods (variables, operationalisation, experimental design, Open Science)
+Week 2 - Reliability and Validity
+Week 3 - Descriptive Statistics
+Week 4 - Data Visualisation (R's ggplot)
+Week 5 - Qualitative Analysis (external)
+Week 6 - Probability Theory
+Week 7 - Sampling and Estimation
+Week 8 - Hypothesis Testing and NHST
+Week 9 - One Sample and Two Sample t-tests
+Week 10 - Paired Sample t-tests
+Week 11 - Chi-squared test and Categorical Data Analysis
+Week 12 - One-Way ANOVA, extension from t-tests
+Week 13 - Correlation and Regression
+
+RESULTS: Average 91.67% (First-Class) 
+Final Computer Exam (3-hours, 33.3%): 95% 
+MCQ Exam (33.3%): 100%
+Coursework Essay on Qualitative Analysis (33.3%): 80% (First)
+
 
 # Core Texts
 
