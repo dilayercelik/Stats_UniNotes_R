@@ -15,7 +15,7 @@ The Calculus and Linear Algebra module consists of weekly lectures (1 hour), wee
 
 ## PALS0045 Intermediate Statistical Methods (2020/21 Terms 1&2)
 
-*OUTLINE*
+> OUTLINE
 
 Week 1 - Recap of Statistical Methods Year 1: NHST, Type I and II error rates, confidence intervals, effect sizes and more.
 
@@ -37,7 +37,7 @@ Week 9 - Bayes I
 Week 10 - Bayes II
 
 
-*RESULTS: Average NA*
+> RESULTS: Average NA
 
 Final Computer Exam: NA
 
@@ -46,7 +46,7 @@ Coursework Lab Report/Secondary Data Analysis + Pre-Registration Form (OSF): NA
 
 ## MATH0045 Calculus and Linear Algebra (2020/21 Term 1)
 
-*OUTLINE*
+> OUTLINE
 
 Week 1 - Introduction to Calculus and Linear Algebra, Recap of some concepts
 
@@ -69,7 +69,7 @@ Week 9 -
 Week 10 - 
 
 
-*RESULTS: Average NA*
+> RESULTS: Average NA
 
 Final Exam: NA
 
@@ -80,7 +80,7 @@ Weekly Quizzes Average: NA
 
 ## PALS0010 Introduction to Research Methods (2019/20 Terms 1&2)
 
-*OUTLINE*
+> OUTLINE
 
 Week 1 - Introduction to Research Methods (variables, operationalisation, experimental design, Open Science)
 
@@ -109,7 +109,7 @@ Week 12 - One-Way ANOVA, extension from t-tests
 Week 13 - Correlation and Regression
 
 
-*RESULTS: Average 91.67% (First-Class)*
+> RESULTS: Average 91.67% (First-Class)
 
 Final Computer Exam (3-hours, 33.3%): 95% 
 
