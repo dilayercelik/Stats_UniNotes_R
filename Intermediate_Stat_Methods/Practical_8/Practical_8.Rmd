@@ -1,0 +1,323 @@
+---
+title: "Practical 8"
+author: "Dilay Fidan Ercelik"
+date: "11/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Set Up
+```{r}
+# install.packages('gtools')
+# install.packages('ResourceSelection')
+# install.packages('pscl')
+```
+
+```{r}
+library(tidyverse)
+library(broom)
+library(NHANES)
+library(gtools)
+library(ResourceSelection)
+library(pscl)
+```
+
+
+
+# Part 1: Logarithmic Functions in R
+
+```{r}
+# log base 10
+log10(35)    # 35 = 10^(1.544..)
+```
+
+```{r}
+# natural log 
+log(35)   # 35 = e^(3.555...) or exp(1)^3.555
+
+# exponentiation, raising e to any power
+exp(35)   # e^35 
+```
+
+
+1. The logit function
+
+```{r}
+# logit() function to calculate log odds i.e. log(p/(1-p))
+
+p <- tibble(p=c(0.99,0.95,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.05,0.01)) %>% 
+  mutate(logit_p=logit(p))
+
+ggplot(p, aes(y=p,x=logit_p)) + 
+  geom_point() + 
+  theme_bw()
+```
+
+2. Tasks
+
+An event occurs with the probabilty of 0.5. Use the graph to read off the logit function, or log odds for this event.
+
+ANSWER: the log odds for an event with p = 0.5 (odds = 0.5/0.5, thus odds = 1) is equal to 0, i.e. log(1) = 0
+
+
+If an event has a log odds of -2, what is its probability?
+
+ANSWER: If an event has a log odds of -2, its probability of occuring is approx. p = 0.3
+
+
+
+# Part 2: Logistic regression with NHANES data
+
+1. Dataset
+
+We are going to look at the binary outcome variable Marijuana, which indicates if a Participant has tried marijuana. This variable is reported for participants aged 18 to 59 years as Yes or No.
+
+We will investigate the hypothesis that there is a relationship between trying Marijuana and the continuous variable Poverty (on a scale of 0 to 5 where 5 is the most affluent) and the categorical variable Gender (sex) of study participant coded as male or female).
+
+
+2. Wrangling
+
+```{r}
+data <- NHANES
+```
+
+```{r}
+# remove entries with duplicate ID values 
+data <- data %>% distinct(ID, .keep_all = TRUE)
+```
+
+```{r}
+# number of people that answered the Marijuana question
+marjna_count <- data %>% filter(!is.na(Marijuana)) %>% summarise(respondents = n())  # 3083
+```
+
+```{r}
+# more details on Yes/No (Marijuana)
+count <- data %>% count(Marijuana)
+```
+
+
+```{r}
+data <- data %>% drop_na(Marijuana)
+```
+
+```{r}
+ggplot(data, aes(x=Poverty)) +
+  geom_histogram() + 
+  labs(title = 'Distribution of the continuous Poverty variable')
+```
+
+```{r}
+data <- data %>% drop_na(Poverty)
+```
+
+```{r}
+ggplot(data, aes(x=Poverty, y=Marijuana)) +
+  geom_boxplot() +
+  labs(title = 'Relationship between Poverty and Marijuana Experience')
+```
+
+
+3. Building a logistic regression model
+
+Unlike the linear models we have seen, the function used is glm() and the parameter family=binominal is what indicates to R that this is a logistic regression.
+
+```{r}
+logr_poverty <- glm(Marijuana ~ Poverty, data=data, family=binomial)
+```
+
+```{r}
+summary(logr_poverty)
+```
+
+
+4. Interpreting the output
+
+Being affluent (i.e. high score on Poverty 0-5 scale) is a significant predictor of trying Marijuana, given the signficant Z value of 2.67 (p<.05)
+
+The coefficients of logistic regression are expressed as log odds and can be viewed using coef().
+
+```{r}
+coef(logr_poverty) #log odds coefficients
+```
+
+To convert these back to odds ratios, we can take their exponent by using exp() on the coef(MODEL).
+
+```{r}
+exp(coef(logr_poverty)) #odds ratio coefficients
+```
+
+A 1.05 coefficient means the odds ratio of a person having tried marijuana increases by 1.05 or 5% for each unit increase in the poverty scale.
+
+
+5. Checking model assumptions
+
+Identify any influential values in the predictor variables (IVs) using cook’s distance and the standardised residuals.
+
+```{r}
+model.data <- augment(logr_poverty) 
+
+ggplot(model.data, aes(x=abs(.std.resid))) + 
+  geom_histogram() +
+  labs(x = 'standardised residuals')
+
+ggplot(model.data, aes(x=.cooksd)) + 
+  geom_histogram() +
+  labs(x = 'cooks distance')
+```
+
+Rules of Thumb: we need to check that Cook’s distance is less than 1 for all datapoints, and standardised residuals are all less than 3.
+
+-> These assumptions are met (check the x-axis of both plots)
+
+
+6. How good is our model?
+
+A non-significant Hosmer-Lemeshow test chi-square indicates that the data fit the model well.
+
+```{r}
+hl <- hoslem.test(logr_poverty$y, fitted(logr_poverty)) 
+hl 
+```
+
+p>.05, therefore, our model (log_poverty) is a good fit to the data.
+
+
+Pseudo R squared describes the variance explained by the model, just as we have seen in linear regression. McFadden’s Pseudo R squared is the most commonly used metric for logistic regression, but the pR2() function from the pscl package gives others as well.
+
+```{r}
+pR2(logr_poverty)
+```
+
+This suggests the model explains a very small amount of variance, despite Poverty being a significant predictor - this is often the case when the n is very large: even small differences are significant.
+
+
+
+7. Making predictions for new data points
+
+```{r}
+newdata <- tibble(Poverty=c(0,3,4.5)) # create dataframe of new values
+```
+
+
+```{r}
+logit.predictions <- predict(object = logr_poverty, newdata = newdata) # on logit scale
+logit.predictions
+```
+
+
+If we want our outcomes to be expressed as probabilities rather than on the logit scale, we need to add type='response' to the formula.
+
+```{r}
+prob.predictions <- predict(object = logr_poverty, newdata = newdata, type="response") # on probability scale 
+prob.predictions
+```
+
+FINAL PREDICTIONS:
+Since these all have a probability (of having tried marijuana) greater than 0.5 we would predict that all three participants have tried marijuana.
+
+
+
+8. Categorical predictors and more complex models
+
+```{r}
+# categorical IV: Gender
+logr_gender <- glm(Marijuana ~ Gender, data=data, family=binomial)
+
+summary(logr_gender)
+```
+
+Based on the output above, is gender a significant predictor of trying marijuana? if so in what direction? HINT: gendermale in the output means it is indicating the change in log odds that comes with being male.
+
+Convert the estimate back to an odds ratio
+
+```{r}
+# odds ratio coefficients
+exp(coef(logr_gender))
+```
+
+ANSWER: Gender is a significant predictor of having tried marijuana (p<.05), with the odds of having tried marijuana increasing by 39% for males, compared to the odds of having tried marijuana for females.
+
+
+Check the model standardised residuals.
+```{r}
+model.data <- augment(logr_gender) 
+
+ggplot(model.data, aes(x=abs(.std.resid))) + 
+  geom_histogram() +
+  labs(x = 'standardised residuals')
+
+```
+
+Assumption: met, since all standardised residuals < 3.
+
+
+What is the variance explained by this model?
+```{r}
+pR2(logr_gender)
+```
+
+Reporting the McFadden's Pseudo R squared, the amount of variance in the data explained by the logr_gender model is 5e-03, i.e. very little of it.
+
+
+What other statistical test might work if we are comparing categorical predictors and outcomes?
+ANSWER: the chi-square test 
+
+
+10. Continuous and dichotomous predictors (IVs), dichotomous outcome (DV)
+
+In the third model, we combine both predictors Poverty (continuous) and Gender (categorical) to predict Marijuana.
+
+```{r}
+logr_combined <- glm(Marijuana ~ Poverty + Gender, data=data, family=binomial)
+summary(logr_combined)
+```
+
+
+What is the variance explained by this third model?
+```{r}
+pR2(logr_combined)
+```
+
+Reporting the McFadden's Pseudo R squared, the amount of variance in the data explained by the logr_gender model is 6e-03, i.e. very little of it, but still greater than the variance explained by the logr_poverty and logr_gender models.
+
+
+
+11. Multiple predictors with interactions
+
+Just like linear regression, it is possible to test for interactions when there are multiple predictors. 
+
+This is going to be our fourth model:
+```{r}
+logr_interactions <- glm(Marijuana ~ Poverty * Gender, data=data, family=binomial)
+
+summary(logr_interactions)
+```
+
+In the model with interactions, none of the predictors are significant.
+
+Similarly to in linear regression, a significant interaction would have meant that the predictive effect of poverty was different for males and females.
+
+
+
+12. Comparing (nested) models
+
+If the resulting Chi-Sq is significant it means that the addition of the extra model parameter was worth the ‘cost’ in terms of degrees of freedom, as it improved model fit.
+
+Let's compare the combined model (logr_combined) with the simpler poverty model alone (logr_poverty) and concludes that adding poverty ratio significantly improves the model.
+
+```{r}
+anova <- anova(logr_poverty, logr_combined, test='Chisq')
+
+anova
+```
+
+p<.05 (significant), so adding poverty ratio significantly improves the model.
+
+
+
+
+
