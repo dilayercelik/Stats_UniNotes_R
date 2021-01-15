@@ -1,0 +1,194 @@
+---
+title: "Practical 11"
+author: "Dilay Fidan Ercelik"
+date: "1/13/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+# Calculating Reliability and Measurement Error
+
+
+Set Up
+```{r}
+#install.packages("irr")
+#install.packages("psych")
+#install.packages("Hmisc")
+```
+
+```{r}
+library(tidyverse)
+library(broom)
+
+library(irr)
+library(psych)
+library(Hmisc)
+```
+
+
+Task 1 - Average Inter-Item Correlation
+```{r}
+data <- read.csv("data/bfidata.csv", sep="\t") 
+```
+
+```{r}
+# 2 & 3
+data <- data %>% mutate(id=row_number()) %>% filter(!(id>1000)) %>% select(A1:A10)
+```
+
+```{r}
+# 4
+dataR <- data %>% mutate(A1 = recode(A1, "1"=5, "2"=4, "3"=3, "4"=2, "5"=1),
+                         A3 = recode(A3, "1"=5, "2"=4, "3"=3, "4"=2, "5"=1),
+                         A5 = recode(A5, "1"=5, "2"=4, "3"=3, "4"=2, "5"=1),
+                         A7 = recode(A7, "1"=5, "2"=4, "3"=3, "4"=2, "5"=1)
+                         )
+```
+
+Average Inter-Item Correlations
+```{r}
+# 5
+dataR_matrix <- as.matrix(dataR) # convert the dataframe into a matrix
+cor <- rcorr(dataR_matrix) # create a list object which contains the correlation coefficients and p values
+cor <- cor$r # extract r values from that list object
+cor # view the object
+```
+
+```{r}
+# 6
+cor <- na_if(cor, 1) # turns 1s into NAs
+```
+
+```{r}
+# 7 
+cor
+```
+
+```{r}
+# 8
+inter_item <- colMeans(cor, na.rm = TRUE)
+```
+
+```{r}
+# 9 
+inter_item_correlation <- mean(inter_item) # mean of the means
+```
+
+
+Task 2 - Cronbach's Alpha
+```{r}
+# 1
+cor2 <- rcorr(dataR_matrix) # create a list object which contains the correlation coefficients and p values
+cor2 <- cor2$r # extract r values from that list object
+cor2 # view the object
+```
+
+```{r}
+# 2
+alpha(cor2)  # function from psych package, calculate Cronbach's Alpha (check std.alpha in 2nd dataframe)
+```
+
+
+Task 3 - Split-Half Reliability
+```{r}
+# 1
+item_e <- dataR %>% select(A2, A4, A6, A8, A10)
+item_o <- dataR %>% select(A1, A3, A5, A7, A9)
+```
+
+```{r}
+# 2
+score_e <- rowMeans(item_e)
+score_o <- rowMeans(item_o)
+```
+
+```{r}
+# 3
+r <- cor.test(score_e, score_o, method="pearson") %>% tidy() %>% pull(estimate)
+```
+
+```{r}
+# 4
+adjusted_r <- (2*r)/(1+r)  # Spearman-Brown Prophecy Formula
+```
+
+
+
+Task 4 - Inter-Rater Reliability
+```{r}
+# 1
+data("diagnoses") # irr package
+```
+
+```{r}
+# 2
+# Cohen’s kappa for agreement between the first 2 raters
+diagnoses %>% select(rater1, rater2) %>% kappa2('unweighted')
+```
+
+```{r}
+# 3
+# Fleiss’s kappa for agreement between the first 3 raters
+diagnoses %>% select(rater1, rater2, rater3) %>% kappam.fleiss()
+```
+
+
+
+Task 5 - Inter-Rater Reliability with Ordinal Data
+```{r}
+# 1
+data("anxiety")  # irr package
+```
+
+```{r}
+# 2
+dfa <- anxiety %>% select(rater1, rater2)
+```
+
+```{r}
+# 3
+dfa %>% kappa2('unweighted') 
+```
+
+```{r}
+dfa %>% kappa2('equal')  # linear weighting
+```
+
+```{r}
+dfa %>% kappa2('squared')  # squared weighting
+```
+
+
+Task 6 - Intra-Class Coefficient to Calculate Inter-Rater Reliability with Continuous Data
+```{r}
+# 1
+lang <- read_csv("data/languagescore.csv")
+```
+
+```{r}
+# 2
+# ICC for one-way absolute agreement
+icc(lang, model="oneway", type="agreement")
+```
+
+```{r}
+# 3
+# ICC for two-way agreement 
+icc(lang, model="twoway", type="agreement") 
+```
+
+```{r}
+# ICC for two-way consistency 
+icc(lang, model="twoway", type="consistency") 
+```
+
+4. Reporting a ICC for a two-way consistency model
+
+For the two-way consistency model, in the language dataset (lang), the ICC is equal to 0.6 (CI=[0.495,0.695]), F(99,198) = 5.5 (p<.001). 
+
+
