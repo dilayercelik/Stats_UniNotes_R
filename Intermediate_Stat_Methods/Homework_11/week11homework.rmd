@@ -1,0 +1,117 @@
+---
+title: "Homework 11"
+author: "Jo Saul"
+date: "02/08/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE, purl=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The dataset we will use 'reliabhomework.csv' which contains scores for 100 participants on 5 items measuring anxiety, (Q1 to Q5), as measured by parents and teachers. 
+
+Parent responses are listed as P1 to P5, teacher responses are T1 to T5. Possible scores are 0,1,2,3. The lower the score the higher the anxiety rating. Child age, gender and id number is also given.
+
+**IMPORTANT: please place all parts of the answer in the R-chunk (including any text using #)**
+
+```{r}
+library(tidyverse)
+library(broom)
+library(psych)
+library(Hmisc)
+library(irr)
+```
+
+
+Q1. load in the data and work out the average inter-item correlations for parent data.
+```{r q01}
+data <- read_csv("data/reliabhomework.csv")
+
+# recoding sex variable: M=0, F=1
+data <- data %>% mutate(sex=recode(sex, "M"=0, "F"=1))
+parent_data <- data %>% select(id, p1, p2, p3, p4, p5)
+
+# getting the cor object
+parent_data_matrix <- as.matrix(parent_data)
+cor <- rcorr(parent_data_matrix)
+cor <- cor$r
+
+# turning 1s into Nas
+cor <- na_if(cor, 1) 
+
+# average inter-item correlations
+inter_item <- colMeans(cor, na.rm=TRUE)
+inter_item
+```
+
+Q2 Compare this to the cronbach's alpha for parent data
+```{r q02}
+parent_data_matrix <- as.matrix(parent_data)
+cor <- rcorr(parent_data_matrix)
+cor <- cor$r
+
+# Cronbach's alpha
+alpha(cor)
+```
+
+Q3. What is the ICC 'consistency' for parent-teacher agreement?
+
+```{r q03}
+# dataframe with total Parent Score and total Teacher Score for each child participant
+data_2 <- data %>% select(ptotal, ttotal)
+
+icc(data_2, model="twoway", type="consistency") 
+```
+
+
+Q4. How would you describe this level of agreement?
+
+```{r}
+# Based on our consistency ICC (0.739) and its 95%-confidence interval, we can infer that the level of agreement is moderate to good.
+```
+
+
+Q5. Now we would like to find out if parents and teachers agree on classifying children into 'low performers' via their scores. 
+
+* First wrangle the data as follows: Make each raw total score into a z-score for parent and teacher data respectively. 
+
+* Then categorise those scoring below the 15th centile as 'Low'.
+
+* Then work out the statistic for agreement on categorisation. 
+
+```{r q05}
+parents_mean <- mean(data$ptotal)
+parents_sd <- sd(data$ptotal)
+teachers_mean <- mean(data$ttotal)
+teachers_sd <- sd(data$ttotal)
+
+# calculating the 2 z-scores for each child 
+data_2 <- data_2 %>% mutate(parent_z_score=scale(ptotal, parents_mean, parents_sd), # z-score based on parent's ratings
+                            teacher_z_score=scale(ttotal, teachers_mean, teachers_sd) # z-score based on teacher's ratings
+                            )
+
+# 15th z-score percentile: z-score = -1.036
+# reference: https://www.pindling.org/Math/Learning/Statistics/z_scores_table.htm
+data_2 <- data_2 %>% mutate(category_parentsview=if_else(parent_z_score<(-1.036), 'Low', 'Not Low'),
+                            category_teachersview=if_else(teacher_z_score<(-1.036), 'Low', 'Not Low')
+                            )
+
+# Cohen's Kappa for agreement on 'Low'/'Not Low' categorisation between teacher and parent
+data_2 %>% select(category_parentsview, category_teachersview) %>% kappa2('unweighted')  # 'unweighted' is the default param; here no weighting since either Low or Not Low (i.e., not ordinal data)
+
+```
+
+
+Q6. How would you interpret this statistic?
+
+```{r}
+# Based on our Cohen's Kappa (0.342), we can infer that the inter-rate reliability on categorisation (Low vs Not Low) is fair (i.e., between 0.2 and 0.4).
+```
+
+
+Q7. What % of time do parents and teachers agree on a categorisation?
+```{r}
+# Parents and teachers agree on categorisation around 34% of time: this relatively low percentage hints at the non-negligible discrepancy in child anxiety assessment between parents and teachers, which may have critical impacts/implications in real-life settings.
+```
+
