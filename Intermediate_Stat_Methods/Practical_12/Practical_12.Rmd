@@ -1,0 +1,127 @@
+---
+title: "Practical 12 - Factor Analysis"
+author: "Dilay Fidan Ercelik"
+date: "1/20/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Task 1 - Set Up
+```{r}
+library(tidyverse)
+library(broom)
+library(psych)
+```
+
+```{r}
+dat1 <- read_csv('data/dat1.csv')
+```
+
+
+Task 2 - Exploring the dataset
+```{r}
+# summary table of means and sds
+summary <- dat1 %>% gather(Item, Score, V1:V6) %>% group_by(Item) %>% summarise(Mean=mean(Score), SD=sd(Score))
+```
+
+```{r}
+# correlation matrix
+corr_matrix <- dat1 %>% select(!X1) %>% cor()
+```
+
+
+Task 3 - Testing assumptions
+```{r}
+# transforming into z-scores
+dat1 <- dat1 %>% select(!X1) %>% scale()
+```
+
+```{r}
+# check the Kaiser-Meyer-Olkin factor adequacy
+KMO(cor(dat1))
+```
+
+```{r}
+# check the Bartlett's Test of Sphericity
+cortest.bartlett(cor(dat1), n=500) 
+```
+
+
+Task 4 - Running a factor analysis
+```{r}
+# scree plot: how many factors do we extract?
+scree(dat1, pc=F)  # F: deselect principal components since we are interested in factors
+```
+There are multiple approaches to interpret the scree plot and choose the number of factors to extract. One way is to look for the change in slope ('elbow'), in which case we'd choose to extract 3 factors. Another way is to retain all factors with individual eigenvalue > 1, in which case we'd choose to extract 2 factors. We're going for the second approach.
+
+```{r}
+# fit the model
+fit <- factanal(dat1, factors=2, scores='regression') 
+```
+
+
+Task 5 - Interpreting the output
+```{r}
+print(fit)
+```
+
+```{r}
+# another way to check the output
+fit %>% tidy()
+```
+Commonalities of each item
+For V1: 1 - uniqueness = 1 - .288 = .712
+For V2: 1 - uniqueness = 1 - .223 = .777
+For V3: 1 - uniqueness = 1 - .095 = .905
+For V4: 1 - uniqueness = 1 - .456 = .544
+For V5: 1 - uniqueness = 1 - .120 = .880
+For V6: 1 - uniqueness = 1 - .106 = .894
+
+(Cumulative) Variance explained by the 2 factors: 0.785 
+
+The first output suggests there is no cross-loadings (i.e., Factor 2 do not load into V1-V3 items and Factor 1 does not load into V4-V6).
+
+```{r}
+# Extracting statistics
+fit$STATISTIC #Chi sq
+
+fit$PVAL # p value
+```
+
+```{r}
+# Dataframe containing the factor score for each factor, for each person
+scores <- fit$scores %>% as.data.frame()
+```
+
+```{r}
+scores <- scores %>% mutate(Correlation=cor())
+```
+
+
+Extension task
+# If somebody scored the following standard scores on V1 through V6, what would their factor scores for each factor be? 1,2,1,4,3,3. 
+
+HINT: you can use tidy() to make items from the fit object easier to access.
+```{r}
+fit %>% tidy()
+```
+The individual's Factor 1 Score:
+Item1_f1Loading * (Item1) + Item2_f1Loading * (Item2) + Item3_f1Loading * (Item3) + Item4_f1Loading * (Item4) + Item5_f1Loading * (Item5) + Item6_f1Loading * (Item6)  
+= 0.843 * 1 + 0.877 * 2 + 0.952 * 1 -0.025 * 4 + 0.043 * 3 + 0.022 * 3
+= 3.644
+
+
+The individual's Factor 2 Score:
+Item1_f2Loading * (Item1) + Item2_f2Loading * (Item2) + Item3_f2Loading * (Item3) + Item4_f2Loading * (Item4) + Item5_f2Loading * (Item5) + Item6_f2Loading * (Item6)  
+= 0.021 * 1 + 0.086 * 2 -0.001 * 1 + 0.737 * 4 + 0.937 * 3 + 0.945 * 3
+= 8.786
+
+
+
+
+
