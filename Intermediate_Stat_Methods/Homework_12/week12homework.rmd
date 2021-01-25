@@ -1,0 +1,108 @@
+---
+title: "week12 homework"
+author: "Jo Saul"
+date: "19/08/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1 type this code to load the dataset. Ensure you have any packages needed for factor analysis loaded.
+```{r q01}
+data(bfi)
+
+library(tidyverse)
+library(broom)
+library(psych)
+```
+
+
+#2 use ?bfi to find out about the dataset, the items and how they are scored
+```{r q02}
+?bfi
+```
+
+#3 remove unneeded columns: select only A1:C5
+```{r q03}
+data <- bfi %>% select(A1:C5)
+
+```
+
+#4 items A1 and C3:5 are reverse scored - we can transform them to make interpretation easier. HINT: answer to A1 = 7-Answer
+```{r q04}
+data <- data %>% mutate(A1=7-A1,
+                        C3=7-C3,
+                        C4=7-C4,
+                        C5=7-C5
+                        )
+
+```
+
+#5 are there any missing data - if so remove
+```{r q05}
+data <- data %>% drop_na()
+
+```
+
+#6 are the data z-scores, if not scale them
+```{r q06}
+data_Zscores <- data %>% scale() 
+
+```
+
+#7 Review the correlations of these indicators.
+```{r q07}
+cor_matrix <- data %>% cor()
+
+```
+
+#8 look at screeplot to determine how many factors to extract.
+
+```{r q08}
+# scree plot: how many factors do we extract?
+scree(data_Zscores, pc=F)  # F: deselect principal components since we are interested in factors
+
+# If we use the 'eigenvalues > 1' rule of thumb, the scree plot below suggests that we should extract 2 factors.
+```
+
+#9. What is the KMO for this dataset and is it sufficient for a factor analysis
+```{r q09}
+KMO(cor(data_Zscores))
+
+# The KMO for this dataset is .78, i.e. greater than .60, which is sufficient to run a factor analysis. 
+```
+
+
+#10.conduct an exploratory factor analysis on this dataset
+```{r q10}
+fit <- factanal(data_Zscores, factors=2, scores='regression')
+
+print(fit)
+fit$STATISTIC
+fit$PVAL
+
+```
+
+#11. how much variance is explained? 
+
+
+```{r q11}
+# Factor 1 and Factor 2, i.e. 2 factors, explained 36.4% of the variance in the dataset.
+```
+
+
+#12. tabulate the factor scores - do scores on factor 1 and 2 correlate with each other - if so describe the relationship.
+```{r q12}
+scores <- fit$scores %>% as.data.frame()
+
+data_Zscores <- data_Zscores %>% as.data.frame() %>% mutate(f1=scores$Factor1, f2=scores$Factor2)
+
+# correlations
+cor(data_Zscores)
+
+# There is a small positive correlation between Factor 1 and Factor 2 (.09).
+```
+
+
