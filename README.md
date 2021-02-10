@@ -31,11 +31,17 @@ The Calculus and Linear Algebra module consists of weekly lectures (1 hour), wee
 
 **Week 7** - Conditional Probabilities and Odds Ratio
 
-**Week 8** - Logistic Regression
+**Week 8** - Logistic Regression (glm in R)
 
-**Week 9** - Bayes I
+**Week 9** - Bayes I (Bayes Factors, Bayesian Correlation, Bayesian t-test)
 
-**Week 10** - Bayes II
+**Week 10** - Bayes II (Bayesian Inference)
+
+**Week 11** - Calculating Reliability and Measurement Error (Internal Consistency, Inter-Rater Reliability)
+
+**Week 12** - Factor Analysis: Exploratory FA, PCA, Confirmatory FA 
+
+**Week 13** - Linear Mixed Effects Models (lme4, lmerTest)
 
 
 > RESULTS: Average NA
@@ -43,6 +49,8 @@ The Calculus and Linear Algebra module consists of weekly lectures (1 hour), wee
 Final Computer Exam: NA
 
 Coursework Lab Report/Secondary Data Analysis + Pre-Registration Form (OSF): NA
+
+14 Weekly Programming Assignments (Average): 100%
 
 
 ## MATH0045 Calculus and Linear Algebra (2020/21 Term 1)
@@ -65,9 +73,9 @@ Coursework Lab Report/Secondary Data Analysis + Pre-Registration Form (OSF): NA
 
 **Week 8** - Linear Algebra Part 1: Introduction to the Basics and concepts, Linear Dependence/Independence
 
-**Week 9** - 
+**Week 9** - Linear Algebra Part 2: Matrix Ranks, Reduced Row Echelon Form, Equation Systems, Determinants
 
-**Week 10** - 
+**Week 10** - Linear Algebra Part 3: Determinants (further), Matrix Inverse, Systems
 
 
 > RESULTS: Average NA
@@ -116,7 +124,7 @@ Final Computer Exam (3-hours, 33.3%): 95%
 
 MCQ Exam (33.3%): 100%
 
-Coursework Essay on Qualitative Analysis (33.3%): 80% (First)
+Coursework Essay on Qualitative Analysis (33.3%): 80% (High First)
 
 
 # Core Texts
