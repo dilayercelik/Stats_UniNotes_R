@@ -82,9 +82,9 @@ Coursework Lab Report/Secondary Data Analysis + Pre-Registration Form (OSF): NA
 
 Final Exam: NA
 
-Mid-Term Coursework: NA
+Mid-Term Coursework: 100% (40/40)
 
-Weekly Quizzes Average: NA
+Weekly Quizzes Average: 97.5%
 
 
 ## PALS0010 Introduction to Research Methods (2019/20 Terms 1&2)
