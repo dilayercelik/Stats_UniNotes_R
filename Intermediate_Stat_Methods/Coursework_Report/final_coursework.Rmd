@@ -1,0 +1,575 @@
+---
+title: "PALS0045 Secondary Data Analysis"
+author: "Author: Anonymous"
+date: "Date: 11/29/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# you can knit the rmarkdown for better visuals 
+# (there are 37 code chunks)
+```
+
+**word count (excl. code chunks & References): 850**
+
+***
+##### We will investigate whether people’s need-to-belong and narcissism predict their political affiliation. 
+##### Further, does the latter predict wellbeing?
+***
+
+## Sample Descriptive Statistics
+
+Let's first compute some descriptive statistics on respondents' demographics (sex/age/education/residence).
+
+```{r}
+### Loading necessary libraries and the dataset ###
+library(tidyverse)
+library(ez)
+library(broom)
+
+# package necessary to compute all possible pairwise comparison (post-hoc) t-tests, applying a Bonferroni correction to p-values
+# install.packages('emmeans')
+library(emmeans)
+
+# Package for nicer inline visualisation of dataframes
+# install.packages('DT')
+library(DT)
+```
+
+```{r}
+# loading data
+orig_data <- read_csv('courseworkdata.csv')
+```
+
+```{r}
+# keeping relevant data/variables only
+
+# Note: we do not drop rows with NA values in the sex,age,edu and place2 variables because this would lead to the deletion of 1000 rows, which is a high number of further exclusion (i.e., this would delete rows that have values in our variables/columns of interest  but that have no value in sex/age/edu/place2). It is not harmful to do so, since these variables won't be put into our statistical models, and are used only for the descriptive statistics of the sample.
+
+data <- orig_data %>% select(ID, politics, party, belong_1:belong_10, belnow, NPI1:NPI13, swb_1:swb_6, sex, age, edu, place2) %>% drop_na(-c(sex,age,edu,place2))
+```
+
+
+```{r}
+### Introduction & Descriptive Statistics on the sample ###
+
+# table summarising proportion (%) of each sex (1 = Male, 2 = Female, 3 =  Other)
+sample_sex <- data %>% group_by(sex) %>% summarise(n_individuals = n(), 
+                                                   perct = round((100 * n_individuals / 3422),2)
+                                                   )    
+
+# Note: 3422 = n of rows in 'data', i.e. total n of respondents
+
+# Visualisation of the table
+datatable(sample_sex, 
+          rownames = FALSE, 
+          colnames = c('Number of Individuals', 'Proportion (%)'), 
+          caption = htmltools::tags$caption(style ='caption-side: bottom; text-align: center;', 
+                                            'TABLE 1 - ', 
+                                            htmltools::em('Sample Demographics (sex)')
+                                            )
+          )
+```
+
+```{r}
+# table summarising mean and sd of the sample's age
+# Note: we need to remove rows/observations with NA in age to compute the statistics
+sample_age <- data %>% summarise(mean_age = round(mean(age, na.rm = TRUE),2),
+                                 mean_sd = round(sd(age, na.rm = TRUE), 2)
+                                 )
+
+# Visualisation of the table
+datatable(sample_age, 
+          rownames = FALSE, 
+          colnames = c('Mean of Age (year)', 'Standard Deviation of Age (year)'), 
+          caption = htmltools::tags$caption(style ='caption-side: bottom; text-align: center;', 
+                                            'TABLE 2 - ', 
+                                            htmltools::em('Sample Demographics (age)')
+                                            )
+          )
+```
+
+```{r}
+# table summarising percentage (%) of each educational level
+sample_edu <- data %>% group_by(edu) %>% summarise(n_individuals = n(),
+                                                   perct = round(100 * (n_individuals / 3422),2)
+                                                   )  # 3422 = n of rows in 'data', i.e. total n of respondents
+
+# Visualisation of the table
+datatable(sample_edu, 
+          rownames = FALSE, 
+          colnames = c('Number of Individuals', 'Proportion (%)'), 
+          caption = htmltools::tags$caption(style ='caption-side: bottom; text-align: center;', 
+                                            'TABLE 3 - ', 
+                                            htmltools::em('Sample Demographics (Education)')
+                                            )
+          )
+```
+
+```{r}
+# table summarising proportion (%) of respondents residing in the US (1) and Other (2)
+sample_localisation <- data %>% group_by(place2) %>% summarise(n_individuals = n(),
+                                                               perct = round((100 * (n_individuals / 3422)),2)
+                                                               ) # 3422 = n of rows in 'data', i.e. total n of respondents
+
+# Visualisation of the table
+datatable(sample_localisation, 
+          rownames = FALSE, 
+          colnames = c('Number of Individuals', 'Proportion (%)'), 
+          caption = htmltools::tags$caption(style ='caption-side: bottom; text-align: center;', 
+                                            'TABLE 4 - ', 
+                                            htmltools::em('Sample Demographics (Residence)')
+                                            )
+          )
+```
+
+```{r}
+# getting rid of variables used for describing the sample 
+data <- data %>% select(-sex) %>% select(-age) %>% select(-edu) %>% select(-place2)
+
+# our variables of interest: politics, party, belong1:belong10, belnow, NPI1:NPI13, swv_1:swb_6
+datatable(data=data, rownames = FALSE)
+```
+
+
+***
+## Part 1
+
+> Our first research question is the following: are need to belong and narcissism related to political affiliation? 
+In other words, do one's need to belong and/or narcissism predict one's political affiliation? 
+
+
+-**Hypotheses & Model**
+
+We hypothesise that there will be a difference in political affiliation 'mean' scores between the levels of need_to_belong and narcissism variables; our alternative, non-directional hypothesis is that our 6 groups (groups created at STEP 2) will differ in the political affiliation mean scores that they get. We base our hypothesis on previous research, as reviewed in the preregistration.
+
+We will conduct a two-way between-subjects ANOVA since we have two categorical independent variables (need-to-belong and narcissism levels) and one numeric dependent variable (political affiliation mean score). 
+
+We are testing 3 null hypotheses in a two-way ANOVA: 
+
+    -There is no overall difference between levels of 'need to belong'
+
+    -There is no overall difference between levels of 'narcissism'
+
+    -The difference between levels of 'need to belong' doesn't depend on the levels of 'narcissism' (+vice-versa), i.e. no interaction effect
+
+We will reject the null hypotheses if p<.05.
+
+
+-**Recoding**
+
+We will recode (reverse-code) belong_1, belong_2 and belong_7 items, as justified in our preregistration. 
+In addition to these items, we need to reverse-code the 'belnow' item.
+Indeed, we wish lower (higher) values on belong items to systematically reflect a lower (higher) need to belong. 
+
+```{r}
+### STEP 1 - Preprocessing on the original dataset ###
+
+# creating our numerical DV: political_affiliation (mean of 'politics' and 'party' scores)
+data1 <- data %>% mutate(political_affiliation_num = (politics + party) / 2) %>% select(-politics) %>% select(-party)
+```
+
+```{r}
+# reverse-coding some belong items before creating need_to_belong_num  (= numerical value associated with the need to belong)
+data1 <- data1 %>% mutate(belong_1 = recode(belong_1, '5'=1, '4'=2, '3'=3, '2'=4, '1'=5), 
+                          belong_3 = recode(belong_3, '5'=1, '4'=2, '3'=3, '2'=4, '1'=5),
+                          belong_7 = recode(belong_7, '5'=1, '4'=2, '3'=3, '2'=4, '1'=5),      
+                          belnow = recode(belnow, '5'=1, '4'=2, '3'=3, '2'=4, '1'=5)
+)
+                         
+```
+
+```{r}
+# creating need_to_belong_num (numeric score, i.e. mean of belong items, on the basis of which need-to-belong levels will be created)
+data1 <- data1 %>% mutate(sum_belongs = belong_1+belong_2+belong_3+belong_4+belong_5+belong_6+belong_7+belong_8+belong_9+belong_10+belnow, need_to_belong_num = sum_belongs/11) %>% select(-(belong_1:belong_10)) %>% select(-belnow) %>% select(-sum_belongs)
+```
+
+```{r}
+# reverse-coding some narcissism NPI items before creating narcissism_num
+data1 <- data1 %>% mutate(NPI1 = recode(NPI1, '1'=2, '2'=1), 
+                          NPI3 = recode(NPI3, '1'=2, '2'=1),
+                          NPI4 = recode(NPI4, '1'=2, '2'=1), 
+                          NPI6 = recode(NPI6, '1'=2, '2'=1),      
+                          NPI7 = recode(NPI7, '1'=2, '2'=1), 
+                          NPI10 = recode(NPI10, '1'=2, '2'=1), 
+                          NPI12 = recode(NPI12, '1'=2, '2'=1), 
+                          NPI13 = recode(NPI13, '1'=2, '2'=1)
+)
+```
+
+```{r}
+# creating narcissism_num (numeric score, i.e., mean of narcissism items, on the basis of which narcissism levels will be created)
+data1 <- data1 %>% mutate(narcissism_num = (NPI1+NPI2+NPI3+NPI4+NPI5+NPI6+NPI7+NPI8+NPI9+NPI10+NPI11+NPI12+NPI13)/13) %>% select(-(NPI1:NPI13)) 
+```
+
+
+```{r}
+### STEP 2 - Creating Groups (the levels of our two categorical IVs) ###
+
+# We use case_when() (extension of ifelse()) source: https://dplyr.tidyverse.org/reference/case_when.html
+# We use between() base function: inclusive on left- and right-hand side                                                                  
+# Source:https://stackoverflow.com/questions/56446186/r-dplyrcase-when-in-3539-only-selects-integers-such-as-35-0-but-not-valu
+
+# creating categorical need-to-belong levels
+data1 <- data1 %>% mutate(need_to_belong = case_when(
+  between(need_to_belong_num, 1, 2.5) ~ 'low need to belong',   
+  between(need_to_belong_num, 2.51, 3.49) ~ 'moderate need to belong',
+  between(need_to_belong_num, 3.5, 5) ~ 'high need to belong')
+)
+```
+
+```{r}
+# creating categorical narcissism levels
+data1 <- data1 %>% mutate(narcissism = case_when(
+  between(narcissism_num, 1, 1.5) ~ 'not narcissistic',
+  between(narcissism_num, 1.51, 2) ~ 'narcissistic')
+)
+```
+
+
+```{r}
+### STEP 3 - Dropping some variables/columns ###
+
+# getting rid of temporary variables we used to create our levels of IV1 (need_to_belong) and IV2 (narcissism)
+data1 <- data1 %>% select(-need_to_belong_num) %>% select(-narcissism_num)
+```
+
+```{r}
+# creating the dataset we will use for our first research question only
+data_RQ1 <- data1 %>% select(-(swb_1:swb_6))
+
+# Visualisation of the dataframe relevant to our Research Question 1
+datatable(data_RQ1, 
+          rownames = FALSE, 
+          colnames = c('ID', 'Political Affiliation Numeric Score', 'Need to Belong Level', 'Narcissism Level'), 
+          caption = htmltools::tags$caption(style ='caption-side: bottom; text-align: center;', 
+                                            'TABLE 5 - ', 
+                                            htmltools::em('Dataframe for Research Question 1')
+                                            )
+          )
+```
+
+```{r}
+# count of our 6 groups 
+# (unequal sample size across groups)
+groups_counttable <- data_RQ1 %>% group_by(need_to_belong, narcissism) %>% summarise(n_respondants=n(),
+                                                                                     perct=n_respondants/3422 * 100)
+
+# Visualisation of the count table of groups
+datatable(groups_counttable, 
+          rownames = FALSE, 
+          colnames = c('Need to Belong Level', 'Narcissism Level', 'Number of Individuals', 'Proportion (%)'), 
+          caption = htmltools::tags$caption(style ='caption-side: bottom; text-align: center;', 
+                                            'TABLE 6 - ', 
+                                            htmltools::em('Count of Groups (RQ1)')
+                                            )
+          )
+```
+
+
+```{r}
+### Step 4 - Plotting & Visualising our Alternative Hypothesis (H1) ###
+
+# computing summary descriptive statistics (needed for the plot below)
+summary_table1 <- data_RQ1 %>% group_by(need_to_belong, narcissism) %>% summarise(mean_ratings= mean(political_affiliation_num),
+                                                                                 sd_ratings=sd(political_affiliation_num),
+                                                                                 se_ratings=sd_ratings/sqrt(n()),
+                                                                                 CI_95_lower=mean_ratings - 1.96*se_ratings,
+                                                                                 CI_95_upper=mean_ratings + 1.96*se_ratings
+                                                                                 )
+# Visualisation of the summary table used in plotting
+datatable(summary_table1, 
+          rownames = FALSE, 
+          colnames = c('Need to Belong Level', 'Narcissism Level', 'mean_ratings', 'sd_ratings', 'se_ratings', 'CI_95_lower', 'CI_95_upper'), 
+          caption = htmltools::tags$caption(style ='caption-side: bottom; text-align: center;', 
+                                            'TABLE 7 - ', 
+                                            htmltools::em('Descriptive Statistics')
+                                            )
+          )
+```
+
+```{r}
+# plotting and visualising the interaction between IV1 and IV2
+ggplot(summary_table1, aes(x=factor(need_to_belong, level = c('low need to belong', 'moderate need to belong', 'high need to belong')), y=mean_ratings, group=narcissism, colour=narcissism)) +
+  geom_line(stat='identity') +
+  geom_errorbar(aes(ymin = CI_95_lower, ymax = CI_95_upper, colour=narcissism), width=0.2) +
+  labs(title='Relationship Between Mean Political Affiliation Mean Scores and Need to Belong', subtitle='Differentiated by Narcissism Level', x='need to belong', y='mean') +
+  scale_color_manual(labels = c('Narcissistic', 'Not Narcissistic'), values = c('red', 'blue')) +
+  theme_bw() 
+```
+
+There isn't a clear interaction effect between the need to belong level and their narcissism level; that is, the narcissism factor does not seem to depend on the need to belong factor, and vice-versa.
+
+
+```{r}
+### STEP 5 - Building the model (two-way ANOVA) ###
+model_RQ1 <- ezANOVA(data=data_RQ1,
+                     dv=political_affiliation_num,
+                     wid=ID,
+                     between=c(need_to_belong, narcissism),
+                     detailed = TRUE,
+                     type=3,
+                     return_aov = TRUE)
+```
+
+```{r}
+# ANOVA model
+datatable(model_RQ1$ANOVA, 
+          rownames = FALSE, 
+          caption = htmltools::tags$caption(style ='caption-side: bottom; text-align: center;', 
+                                            'TABLE 8 - ', 
+                                            htmltools::em('Output of model_RQ1')
+                                            )
+          )
+```
+
+```{r}
+# Levene's Test for Homogeneity of Variance
+datatable(model_RQ1$`Levene's Test for Homogeneity of Variance`, 
+          rownames = FALSE, 
+          caption = htmltools::tags$caption(style ='caption-side: bottom; text-align: center;', 
+                                            'TABLE 9 - ', 
+                                            htmltools::em('Output of Levene\'s Test for model_RQ1')
+                                            )
+          )
+```
+
+### Step 6 - Report 
+
+Levene's Test  shows that the assumption of homogeneity of variance is met, since it tests for the null hypothesis of homogeneity of variance and we obtained the following, non-significant result (p>.05): F(5, 3416) = 1.37, p = 0.2315.
+
+A two-way between-subjects ANOVA found a non-significant main effect of need to belong level, F(2,3416) = 2.12, p >.05, ges = 0.0012, and of narcissism level, F(1,3416) = 0.03, p>.05, ges = 0.00001, on political affiliation mean scores. The interaction between need to belong level and narcissism level was also non-significant F(2,3416) = 1.35, p>.05, ges = 0.0008. 
+
+Therefore, our hypothesis is not supported: neither levels of need to belong nor levels of narcissism are predictors of the political affiliation mean score, both as main effects and as part of an interaction.
+
+
+```{r}
+### STEP 7 - Assumption Checking for ANOVA ###
+
+# our DV is ratio level (omitted in the preregistration): OK
+# the observations are independent (omitted in the preregistration): OK
+# Levene's Test revealed the homogeneity of variance: OK
+
+# We also need to check for the normality of residuals (omitted in the preregistration): QQplot & Shapiro-Wilk Test
+plot(model_RQ1$aov) # check 2nd graph: NO
+```
+
+```{r}
+# Shapiro-Wilk Normality test (omitted from the preregistration)
+# H0: normality of residuals
+shapiro.test(model_RQ1$aov$residuals)  # significant, so assumption is NOT met
+```
+
+The assumption for the normality of residuals isn't met (Graph 2 + see above); this is an issue since our groups are also NOT of equal size (see TABLE 6). While acknowledging this limitation, we'll keep our two-way ANOVA that uses a 'type 3' for calculating sum-of-squares (used for unbalanced designs like ours).
+
+
+***
+## Part 2
+
+> Our second research question follows from Álvarez-Díaz et al.'s study (2010) on the 'Politics of Happiness' (described in the preregistration): does political affiliation have an influence on wellbeing, i.e., does one's political affiliation predict one's wellbeing on a subjective wellbeing scale?
+
+
+-**Hypotheses & Model**
+
+Our hypothesis (non-directional) is that there will be a difference in subjective wellbeing mean scores between the various political affiliation groups (groups will be created in STEP 2).
+
+We will conduct a one-way between-subjects ANOVA since we have one categorical independent variable (political affiliation levels) and one numeric dependent variable (subjective wellbeing mean score).
+
+A one-way ANOVA tests the following null hypothesis:
+      
+      -There is no difference between the political affiliation groups means on the subjective wellbeing scale.
+
+We will reject the null hypothesis if p<.05.
+
+
+-**No recoding required**
+
+```{r}
+### STEP 1 - Preprocessing on the original dataset ###
+
+# creating our numerical DV: subjective_wellbeing
+data2 <- data %>% mutate(subjective_wellbeing = (swb_1+swb_2+swb_3+swb_4+swb_5+swb_6) / 6) %>% select(-(swb_1:swb_6))
+
+# we already have our political_affiliation_num variable in data_RQ1, let's add it to data2
+data2['political_affiliation_num'] <- data_RQ1 %>% pull(political_affiliation_num)
+```
+
+
+```{r}
+### STEP 2 - Creating Groups (the levels of our categorical IV) ###
+
+# creating categorical political affiliation levels
+data2 <- data2 %>% mutate(political_affiliation = case_when(
+  between(political_affiliation_num, 1, 3) ~ 'liberal & democrat',   
+  between(political_affiliation_num, 3.1, 3.9) ~ 'moderate/mixed',
+  between(political_affiliation_num, 4, 7) ~ 'conservative & republican',
+  between(political_affiliation_num, 7.1, 8) ~ 'apolitical')
+)
+
+# NOTE: the pre-registration form has a 'typo': the third level of 'political affiliation' is 'conservative & republican', NOT 'conservative & democrat'
+```
+
+
+```{r}
+### STEP 3 - Dropping some variables/columns ###
+
+# getting rid of temporary variables we used to create our levels of IV (political_affiliation) and other non-relevant variables
+data_RQ2 <- data2 %>% select(-politics) %>% select(-party) %>% select(-political_affiliation_num) %>% select(-(belong_1:belong_10)) %>% select(-belnow) %>% select(-(NPI1:NPI13)) 
+
+# Visualisation of the dataframe relevant to our Research Question 2
+datatable(data_RQ2, 
+          rownames = FALSE, 
+          colnames = c('Subjective Wellbeing Mean Score', 'Political Affiliation Level'), 
+          caption = htmltools::tags$caption(style ='caption-side: bottom; text-align: center;', 
+                                            'TABLE 10 - ', 
+                                            htmltools::em('Dataframe for Research Question 2')
+                                            )
+          )
+```
+
+```{r}
+# count of our 4 political affiliation groups
+# (unequal sample size across groups)
+groups_counttable2 <- data_RQ2 %>% group_by(political_affiliation) %>% summarise(n_respondants=n(),
+                                                                                 perct=n_respondants/3422 * 100)
+
+# Visualisation of the count table of groups
+datatable(groups_counttable2, 
+          rownames = FALSE, 
+          colnames = c('Political Affiliation Level', 'Number of Individuals', 'Proportion (%)'), 
+          caption = htmltools::tags$caption(style ='caption-side: bottom; text-align: center;', 
+                                            'TABLE 11 - ', 
+                                            htmltools::em('Count of Groups (RQ2)')
+                                            )
+          )
+```
+
+
+```{r}
+### STEP 4 - Plotting & Visualising our Alternative Hypothesis (H1) ###
+
+# plotting the relationship between our IV (political_affiliation levels) and DV (subjective_wellbeing)
+ggplot(data_RQ2, aes(x=factor(political_affiliation, level = c('liberal & democrat', 'moderate/mixed', 'conservative & republican', 'apolitical')), y=subjective_wellbeing)) +
+  geom_violin() +
+  geom_boxplot(width=0.5) +
+  labs(title='Relationship Between Subjective Wellbeing Mean Scores and Political Affiliation', x='political affiliation', y='mean subjective wellbeing mean score') +
+  theme_bw() 
+```
+From the boxplots above, it looks like that 'conservative & republican' respondents have the greatest subjective wellbeing, on average; on the other hand, 'apolitical' respondents appear to have the lowest subjective wellbeing on average.
+
+```{r}
+### STEP 5 - Building the model (one-way ANOVA) ###
+model_RQ2 <- ezANOVA(data_RQ2,
+                     wid = ID,
+                     dv = subjective_wellbeing,
+                     between = political_affiliation,
+                     detailed = TRUE,
+                     type=3,
+                     return_aov = TRUE)
+```
+
+```{r}
+# ANOVA model
+datatable(model_RQ2$ANOVA, 
+          rownames = FALSE, 
+          caption = htmltools::tags$caption(style ='caption-side: bottom; text-align: center;', 
+                                            'TABLE 12 - ', 
+                                            htmltools::em('Output of model_RQ2')
+                                            )
+          )
+```
+
+```{r}
+# Levene's Test for Homogeneity of Variance
+datatable(model_RQ2$`Levene's Test for Homogeneity of Variance`, 
+          rownames = FALSE, 
+          caption = htmltools::tags$caption(style ='caption-side: bottom; text-align: center;', 
+                                            'TABLE 13 - ', 
+                                            htmltools::em('Output of Levene\'s Test for model_RQ2')
+                                            )
+          )
+```
+
+
+### Step 6 - Report 
+
+Levene's Test shows that the assumption of homogeneity of variance is met since we obtained the following non-significant result (p>.05): F(3, 3418) = 1.10, p = 0.3474.
+
+A one-way between-subjects ANOVA found a significant main effect of political affiliation level, F(3,3418) = 17.84, p<.001, ges = 0.0154, on subjective wellbeing mean scores.
+
+We, thus, found political affiliation to be a statistically significant predictor of the subjective wellbeing mean score: our hypothesis is supported. 
+
+We must note that our effect size was only of ges=0.0154, which is a very small effect size, hinting at the presence of a statistical result of lower practical significance.
+
+
+```{r}
+### STEP 7 - Checking assumptions for ANOVAs ###
+
+# our DV is ratio level (omitted in the preregistration): OK
+# the observations are independent (omitted in the preregistration): OK
+# Levene's Test revealed the homogeneity of variance: OK
+
+# We also need to check for the normality of residuals (omitted in the preregistration)
+plot(model_RQ2$aov) # check 2nd graph: NO
+```
+
+```{r}
+# Shapiro-Wilk Normality test (omitted from the preregistration)
+# H0: normality of residuals
+shapiro.test(model_RQ2$aov$residuals)  # significant, so assumption is NOT met
+```
+
+Residuals aren't normally distributed (Graph 2 + see above); we will run a Kruskal–Wallis test, the non-parametric equivalent of a one-way ANOVA, robust to non-normality of residuals. The preregistration omitted the likelihood of this scenario.
+
+```{r}
+# running the Kruskal-Wallis one-way analysis of variance
+kruskal.test(subjective_wellbeing ~ political_affiliation, data=data_RQ2)
+```
+
+
+A Kruskal-Wallis test revealed, like our one-way ANOVA, a significant main effect of political affiliation level on subjective wellbeing mean scores: H(3) = 52.22, p<.001, supporting our non-directional hypothesis. 
+
+
+```{r}
+### STEP 8 - Post-Hoc t-tests ###
+
+# We will now run two-sample t-tests to run pairwise comparisions between the different political affiliation groups. The description of these statistical analysis has been omitted in the preregistration: these post-hoc t-tests are required to gain insight into the 'meaning' of our significant predictor relationship, i.e. what groups actually differ in subjective wellbeing mean scores? 
+
+# To do these pairwise comparisons easily and to apply Bonferroni correction to the p-values, we will use emmeans()
+mod_pairwise_RQ2 <-emmeans(model_RQ2$aov, pairwise ~ political_affiliation, adjust = "bonferroni")
+
+mod_contrasts_RQ2 <- mod_pairwise_RQ2$contrasts %>% tidy()
+
+datatable(mod_contrasts_RQ2, 
+          rownames = FALSE, 
+          caption = htmltools::tags$caption(style ='caption-side: bottom; text-align: center;', 
+                                            'TABLE 14 - ', 
+                                            htmltools::em('Pairwise Comparisons of Political Affiliation Groups (model_RQ2)')
+                                            )
+          )
+```
+Two two-sample t-tests revealed significant differences: the 'conservative & republican' group has a significantly higher mean subjective wellbeing mean score than the 'liberal & democrat' group (+0.34): t(3418) = 7.0, adjusted p <.001; the 'apolitical' group has a significantly lower mean subjective wellbeing mean score than the 'conservative & republican' group (-0.34): t(3418) = -4.3, p <.001.
+
+
+***
+## Extra: Some Considerations
+
+    -Previous studies have found social identity (the group you're part of) to be a predictor of a range of political behaviours (Greene, 2004). We made the theoretical assumption that 'need-to-belong' would tap onto the social identity construct, with low-need-to-belong individuals likely to be part of a group (reverse for high-need-to-belong individuals). 
+
+    -However, 'need-to-belong' has not predicted 'political affiliation' here, hinting at the limitation of our theoretical assumption. We expected 'narcissism' to interact with 'need-to-belong'; since the latter did not predict our DV, the investigation of this interaction between our IVs became less relevant (shown to be non-significant). Note that these non-significances may also be due to the violation of the 'normality of residuals' assumption, making our ANOVA unsuitable for testing these effects.
+    
+    -The lack of significant effect may also be due to our group creation methodology; segmenting groups based on cutoffs may be oversimplistic and theoretically questionable since, inherently, 'narcissism' is not a binary psychological variable but reflects a spectrum (& need to belong). This is a limitation: are there really no significant main effects or is our data preprocessing the real reason behind this non-significance? Thus, it's tricky to interpret our results for RQ1.
+
+    -In line with previous research, 'political affiliation' was a strong predictor of 'wellbeing'; interestingly, 'conservative & republican' respondents scored significantly higher than 'liberal & democrat' and 'apolitical' groups; they also scored higher than 'moderate/mixed' respondents, although this difference was non-significant. Future studies should further investigate this phenomenon (replicable?) and the predictors of political affiliation.
+
+
+## References
+
+Álvarez-Díaz, Á., González, L., & Radcliff, B. (2010). The Politics of Happiness: On the Political Determinants of Quality of Life in the American    States. The Journal of Politics, 72(3), 894-905.
+
+Dumas, Tara M, Maxwell-Smith, Matthew, Davis, Jordan P, & Giulietti, Paul A. (2017). Lying or longing for likes? Narcissism, peer belonging, loneliness and normative versus deceptive like-seeking on Instagram in emerging adulthood. Computers in Human Behavior, 71, 1-10.
+
+Greene, S. (2004). Social Identity Theory and Party Identification. Social Science Quarterly, 85(1), 136-153.
+
+Smith, J. L. (2013). Reducing narcissistic defensiveness through the activation of belonging. 
