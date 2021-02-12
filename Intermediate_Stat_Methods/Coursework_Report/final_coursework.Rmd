@@ -1,6 +1,6 @@
 ---
 title: "PALS0045 Secondary Data Analysis"
-author: "Author: Anonymous"
+author: "Author: Dilay Fidan Ercelik"
 date: "Date: 11/29/2020"
 output: html_document
 ---
